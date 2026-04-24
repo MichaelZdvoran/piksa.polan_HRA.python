@@ -119,11 +119,11 @@ class Player:
         color = COLOR_WATER if self.player_type == PlayerType.WATER else COLOR_FIRE
         bob_offset = int(2 * math.sin(self.animation_time)) if self.on_ground else 0
         
-        # Body
+        # Body with gradient effect
         pygame.draw.rect(screen, color, (self.pos.x, self.pos.y + bob_offset, self.width, self.height), border_radius=5)
         
         # Glow effect
-        pygame.draw.rect(screen, (255, 255, 255), (self.pos.x, self.pos.y + bob_offset, self.width, self.height), 1, border_radius=5)
+        pygame.draw.rect(screen, (255, 255, 255), (self.pos.x, self.pos.y + bob_offset, self.width, self.height), 2, border_radius=5)
         
         # Eyes
         eye_color = (255, 255, 255)

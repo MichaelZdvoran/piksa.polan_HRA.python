@@ -149,6 +149,7 @@ class Game:
     
     def draw(self):
         self.screen.fill(COLOR_BG)
+        self._draw_background()
         
         if self.state == GameState.MENU:
             self._draw_menu()
@@ -162,6 +163,17 @@ class Game:
             self._draw_game_over()
         
         pygame.display.flip()
+    
+    def _draw_background(self):
+        """Draw an animated background with gradient effect"""
+        # Create subtle gradient background
+        for y in range(SCREEN_HEIGHT):
+            # Interpolate between dark blue at top and dark purple at bottom
+            ratio = y / SCREEN_HEIGHT
+            r = int(20 + ratio * 10)
+            g = int(20 + ratio * 5)
+            b = int(30 + ratio * 15)
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (SCREEN_WIDTH, y))
     
     def _draw_menu(self):
         self.hud.draw_menu(self.screen)

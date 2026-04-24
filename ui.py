@@ -18,8 +18,19 @@ class Button:
         color = COLOR_BUTTON_HOVER if self.hovered else COLOR_BUTTON
         pulse = int(2 * abs(math.sin(self.pulse_time))) if self.hovered else 0
         
+        # Draw shadow
+        shadow_rect = self.rect.copy()
+        shadow_rect.y += 3
+        pygame.draw.rect(screen, (0, 0, 0), shadow_rect, border_radius=10)
+        
+        # Draw button with gradient effect
         pygame.draw.rect(screen, color, self.rect, border_radius=10)
         pygame.draw.rect(screen, COLOR_TEXT, self.rect, 3 + pulse, border_radius=10)
+        
+        # Add highlight on top for depth
+        highlight_rect = pygame.Rect(self.rect.x + 2, self.rect.y + 2, self.rect.width - 4, self.rect.height // 3)
+        highlight_color = tuple(min(255, c + 40) for c in color)
+        pygame.draw.rect(screen, highlight_color, highlight_rect, border_radius=5)
         
         text_surf = self.font.render(self.text, True, COLOR_TEXT)
         text_rect = text_surf.get_rect(center=self.rect.center)
@@ -39,11 +50,11 @@ class LevelSelectButton(Button):
     
     def draw(self, screen):
         if not self.unlocked:
-            color = (100, 100, 100)
+            color = (80, 80, 80)
             pygame.draw.rect(screen, color, self.rect, border_radius=10)
-            pygame.draw.rect(screen, (150, 150, 150), self.rect, 2, border_radius=10)
+            pygame.draw.rect(screen, (120, 120, 120), self.rect, 3, border_radius=10)
             lock_font = pygame.font.Font(None, 48)
-            lock_text = lock_font.render("🔒", True, COLOR_TEXT)
+            lock_text = lock_font.render("🔒", True, (200, 200, 200))
             lock_rect = lock_text.get_rect(center=self.rect.center)
             screen.blit(lock_text, lock_rect)
         else:
@@ -57,6 +68,12 @@ class HUD:
         self.font_tiny = pygame.font.Font(None, 24)
     
     def draw_game_hud(self, screen, level_num, time_remaining, water_coins, fire_coins):
+        # Draw HUD background panel
+        hud_bg = pygame.Surface((SCREEN_WIDTH, 120))
+        hud_bg.set_alpha(40)
+        hud_bg.fill((20, 20, 30))
+        screen.blit(hud_bg, (0, 0))
+        
         # Level info
         level_text = self.font_small.render(f"Level {level_num}", True, COLOR_TEXT)
         screen.blit(level_text, (20, 20))
@@ -79,6 +96,12 @@ class HUD:
         screen.blit(fire_text, (20, 100))
     
     def draw_menu(self, screen):
+        # Draw gradient title background
+        title_bg = pygame.Surface((SCREEN_WIDTH, 150))
+        title_bg.set_alpha(30)
+        title_bg.fill((100, 150, 255))
+        screen.blit(title_bg, (0, 40))
+        
         title = self.font_large.render("FIRE & WATER", True, COLOR_TEXT)
         subtitle = self.font_medium.render("Puzzle Adventure", True, COLOR_TEXT)
         instructions = self.font_tiny.render("Water: Arrow Keys | Fire: WASD", True, COLOR_TEXT)
@@ -93,6 +116,12 @@ class HUD:
         screen.blit(fire_text, (50, SCREEN_HEIGHT - 100))
     
     def draw_level_select(self, screen):
+        # Draw title background
+        title_bg = pygame.Surface((SCREEN_WIDTH, 120))
+        title_bg.set_alpha(30)
+        title_bg.fill((150, 100, 50))
+        screen.blit(title_bg, (0, 20))
+        
         title = self.font_large.render("SELECT LEVEL", True, COLOR_TEXT)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
         
@@ -105,8 +134,16 @@ class HUD:
         overlay.fill((0, 0, 0))
         screen.blit(overlay, (0, 0))
         
+        # Draw decorative box
+        box_width = 500
+        box_height = 250
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        pygame.draw.rect(screen, (100, 150, 255), (box_x, box_y, box_width, box_height), border_radius=10)
+        pygame.draw.rect(screen, COLOR_SUCCESS, (box_x, box_y, box_width, box_height), 3, border_radius=10)
+        
         complete_text = self.font_large.render("LEVEL COMPLETE!", True, COLOR_SUCCESS)
-        screen.blit(complete_text, (SCREEN_WIDTH // 2 - complete_text.get_width() // 2, SCREEN_HEIGHT // 2 - 100))
+        screen.blit(complete_text, (SCREEN_WIDTH // 2 - complete_text.get_width() // 2, SCREEN_HEIGHT // 2 - 80))
         
         if current_level < max_level:
             next_text = self.font_small.render("Click to continue...", True, COLOR_TEXT)
@@ -120,8 +157,16 @@ class HUD:
         overlay.fill((0, 0, 0))
         screen.blit(overlay, (0, 0))
         
+        # Draw decorative box
+        box_width = 500
+        box_height = 250
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        pygame.draw.rect(screen, (150, 50, 50), (box_x, box_y, box_width, box_height), border_radius=10)
+        pygame.draw.rect(screen, COLOR_ERROR, (box_x, box_y, box_width, box_height), 3, border_radius=10)
+        
         gameover_text = self.font_large.render("GAME OVER", True, COLOR_ERROR)
-        screen.blit(gameover_text, (SCREEN_WIDTH // 2 - gameover_text.get_width() // 2, SCREEN_HEIGHT // 2 - 100))
+        screen.blit(gameover_text, (SCREEN_WIDTH // 2 - gameover_text.get_width() // 2, SCREEN_HEIGHT // 2 - 80))
         
         retry_text = self.font_small.render("Click to return to menu", True, COLOR_TEXT)
         screen.blit(retry_text, (SCREEN_WIDTH // 2 - retry_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
