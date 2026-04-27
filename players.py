@@ -81,8 +81,7 @@ class Player:
         
         # Coin collection
         for coin in coins:
-            if coin.check_collision(self.rect):
-                coin.collected = True
+            if coin.check_collision(self.rect, self.player_type):
                 self.coins_collected += 1
         
         # Enemy collision
@@ -119,18 +118,29 @@ class Player:
         color = COLOR_WATER if self.player_type == PlayerType.WATER else COLOR_FIRE
         bob_offset = int(2 * math.sin(self.animation_time)) if self.on_ground else 0
         
-        # Body with gradient effect
+        # Main body
         pygame.draw.rect(screen, color, (self.pos.x, self.pos.y + bob_offset, self.width, self.height), border_radius=5)
         
-        # Glow effect
-        pygame.draw.rect(screen, (255, 255, 255), (self.pos.x, self.pos.y + bob_offset, self.width, self.height), 2, border_radius=5)
+        # Lighter shade highlight
+        light_color = tuple(min(255, c + 50) for c in color)
+        pygame.draw.rect(screen, light_color, (self.pos.x + 2, self.pos.y + bob_offset + 2, self.width - 4, 8), border_radius=3)
         
-        # Eyes
+        # Border glow effect
+        glow_width = 3 if self.on_ground else 2
+        pygame.draw.rect(screen, (255, 255, 255), (self.pos.x, self.pos.y + bob_offset, self.width, self.height), glow_width, border_radius=5)
+        
+        # Eyes looking in direction
         eye_color = (255, 255, 255)
         left_eye_x = self.pos.x + 8 + (self.direction * 2)
         right_eye_x = self.pos.x + 22 + (self.direction * 2)
+        eye_y = self.pos.y + 10 + bob_offset
         
-        pygame.draw.circle(screen, eye_color, (left_eye_x, self.pos.y + 8 + bob_offset), 3)
-        pygame.draw.circle(screen, eye_color, (right_eye_x, self.pos.y + 8 + bob_offset), 3)
-        pygame.draw.circle(screen, (0, 0, 0), (left_eye_x, self.pos.y + 8 + bob_offset), 1)
-        pygame.draw.circle(screen, (0, 0, 0), (right_eye_x, self.pos.y + 8 + bob_offset), 1)
+        pygame.draw.circle(screen, eye_color, (left_eye_x, eye_y), 3)
+        pygame.draw.circle(screen, eye_color, (right_eye_x, eye_y), 3)
+        pygame.draw.circle(screen, (0, 0, 0), (left_eye_x + self.direction, eye_y), 1)
+        pygame.draw.circle(screen, (0, 0, 0), (right_eye_x + self.direction, eye_y), 1)
+        
+        # Mouth (smile when on ground)
+        if self.on_ground:
+            mouth_y = self.pos.y + 28 + bob_offset
+            pygame.draw.line(screen, (0, 0, 0), (self.pos.x + 10, mouth_y), (self.pos.x + 20, mouth_y), 1)

@@ -46,14 +46,16 @@ class Level:
         self.obstacles.append(Obstacle(850, 450, 100, 30))
         self.obstacles.append(Obstacle(1000, 400, 100, 30))
         
-        # Coins on platforms
-        self.coins.append(Coin(150, 660))
-        self.coins.append(Coin(300, 610))
-        self.coins.append(Coin(450, 560))
-        self.coins.append(Coin(600, 510))
-        self.coins.append(Coin(750, 460))
-        self.coins.append(Coin(900, 410))
-        self.coins.append(Coin(1050, 360))
+        # Water player coins (blue)
+        self.coins.append(Coin(150, 660, "water"))
+        self.coins.append(Coin(300, 610, "water"))
+        self.coins.append(Coin(450, 560, "water"))
+        self.coins.append(Coin(600, 510, "water"))
+        
+        # Fire player coins (red)
+        self.coins.append(Coin(750, 460, "fire"))
+        self.coins.append(Coin(900, 410, "fire"))
+        self.coins.append(Coin(1050, 360, "fire"))
         
         # Goals at end
         self.water_goal = Door(100, 620, PlayerType.WATER)
@@ -64,7 +66,7 @@ class Level:
         # Medium - Buttons and locked doors
         self.obstacles.append(Obstacle(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50))
         
-        # Left section
+        # Left section - water path
         self.obstacles.append(Obstacle(50, 700, 120, 30))
         self.obstacles.append(Obstacle(50, 550, 120, 30))
         self.moving_platforms.append(MovingPlatform(50, 400, 120, 30, 60, 1.5))
@@ -75,7 +77,7 @@ class Level:
         self.obstacles.append(Obstacle(350, 500, 100, 30))
         self.obstacles.append(Obstacle(350, 350, 100, 30))
         
-        # Right section
+        # Right section - fire path
         self.obstacles.append(Obstacle(1000, 700, 120, 30))
         self.obstacles.append(Obstacle(1000, 550, 120, 30))
         self.moving_platforms.append(MovingPlatform(1000, 400, 120, 30, 60, 1.5))
@@ -89,13 +91,15 @@ class Level:
         self.buttons.append(ActivationButton(120, 470, "water"))
         self.buttons.append(ActivationButton(1070, 470, "fire"))
         
-        # Coins
-        self.coins.append(Coin(120, 660))
-        self.coins.append(Coin(120, 510))
-        self.coins.append(Coin(420, 610))
-        self.coins.append(Coin(420, 460))
-        self.coins.append(Coin(1070, 660))
-        self.coins.append(Coin(1070, 510))
+        # Water player coins (blue)
+        self.coins.append(Coin(120, 660, "water"))
+        self.coins.append(Coin(120, 510, "water"))
+        self.coins.append(Coin(420, 610, "water"))
+        
+        # Fire player coins (red)
+        self.coins.append(Coin(1070, 660, "fire"))
+        self.coins.append(Coin(1070, 510, "fire"))
+        self.coins.append(Coin(980, 610, "fire"))
         
         # Enemies
         self.enemies.append(Enemy(420, 350, patrol_left=300, patrol_right=500))
@@ -138,18 +142,26 @@ class Level:
         self.obstacles.append(Obstacle(450, 150, 300, 30))
         
         # Crossbows shooting from sides
-        self.crossbows.append(Crossbow(80, 550, 1))  # shoots right
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 100, 550, -1))  # shoots left
+        self.crossbows.append(Crossbow(80, 550, 1))
+        self.crossbows.append(Crossbow(SCREEN_WIDTH - 100, 550, -1))
         
         # Hazards
         self.hazard_pools.append(HazardPool(350, 680, 60, 30, "water"))
         self.hazard_pools.append(HazardPool(700, 680, 60, 30, "lava"))
         
-        # Coins
-        for x in [130, 260, 390, 520, 640, 770, 900]:
-            self.coins.append(Coin(x, 650))
-        for x in [150, 450, 900]:
-            self.coins.append(Coin(x, 250))
+        # Coins - water player
+        self.coins.append(Coin(130, 650, "water"))
+        self.coins.append(Coin(260, 640, "water"))
+        self.coins.append(Coin(390, 650, "water"))
+        self.coins.append(Coin(240, 510, "water"))
+        self.coins.append(Coin(150, 250, "water"))
+        
+        # Coins - fire player
+        self.coins.append(Coin(640, 650, "fire"))
+        self.coins.append(Coin(770, 640, "fire"))
+        self.coins.append(Coin(900, 650, "fire"))
+        self.coins.append(Coin(760, 510, "fire"))
+        self.coins.append(Coin(1000, 250, "fire"))
         
         # Enemies
         self.enemies.append(Enemy(525, 360, patrol_left=400, patrol_right=650))
@@ -194,9 +206,16 @@ class Level:
         self.crossbows.append(Crossbow(150, 450, 1))
         self.crossbows.append(Crossbow(SCREEN_WIDTH - 150, 450, -1))
         
-        # Coins
-        for x in [130, 370, 540, 770, 940, 275, 825, 525]:
-            self.coins.append(Coin(x, 200))
+        # Coins - water player
+        self.coins.append(Coin(130, 660, "water"))
+        self.coins.append(Coin(370, 610, "water"))
+        self.coins.append(Coin(540, 660, "water"))
+        self.coins.append(Coin(275, 200, "water"))
+        
+        # Coins - fire player
+        self.coins.append(Coin(770, 610, "fire"))
+        self.coins.append(Coin(940, 660, "fire"))
+        self.coins.append(Coin(825, 200, "fire"))
         
         # Enemies
         self.enemies.append(Enemy(260, 510, patrol_left=150, patrol_right=350))
@@ -214,8 +233,8 @@ class Level:
     def _level_5(self):
         # Extreme - Ultimate challenge
         self.obstacles.append(Obstacle(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50))
-        self.obstacles.append(Obstacle(0, 0, 50, SCREEN_HEIGHT))  # Left wall
-        self.obstacles.append(Obstacle(SCREEN_WIDTH - 50, 0, 50, SCREEN_HEIGHT))  # Right wall
+        self.obstacles.append(Obstacle(0, 0, 50, SCREEN_HEIGHT))
+        self.obstacles.append(Obstacle(SCREEN_WIDTH - 50, 0, 50, SCREEN_HEIGHT))
         
         # Complex maze with moving platforms
         for i in range(10):
@@ -243,7 +262,8 @@ class Level:
         
         # Many hazards
         for x in [130, 350, 570, 790]:
-            self.hazard_pools.append(HazardPool(x, 725, 50, 25, "lava" if x % 300 < 150 else "water"))
+            hazard_type = "lava" if x % 300 < 150 else "water"
+            self.hazard_pools.append(HazardPool(x, 725, 50, 25, hazard_type))
         
         # Multiple crossbows
         self.crossbows.append(Crossbow(60, 550, 1))
@@ -251,13 +271,15 @@ class Level:
         self.crossbows.append(Crossbow(200, 300, 1))
         self.crossbows.append(Crossbow(SCREEN_WIDTH - 200, 300, -1))
         
-        # Many coins
-        for x in range(120, 1100, 200):
-            self.coins.append(Coin(x, 650))
-        for x in range(200, 1000, 250):
-            self.coins.append(Coin(x, 400))
-        for x in range(250, 1000, 300):
-            self.coins.append(Coin(x, 200))
+        # Coins - water player
+        water_coin_positions = [(120, 650), (260, 640), (390, 650), (240, 450), (150, 200)]
+        for x, y in water_coin_positions:
+            self.coins.append(Coin(x, y, "water"))
+        
+        # Coins - fire player
+        fire_coin_positions = [(900, 650), (1000, 650), (760, 450), (1000, 200)]
+        for x, y in fire_coin_positions:
+            self.coins.append(Coin(x, y, "fire"))
         
         # Many enemies
         self.enemies.append(Enemy(280, 450, patrol_left=150, patrol_right=400))

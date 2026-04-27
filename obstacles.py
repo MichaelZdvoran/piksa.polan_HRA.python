@@ -17,6 +17,9 @@ class Obstacle:
         if self.obstacle_type == "solid":
             pygame.draw.rect(screen, COLOR_WALL, self.rect)
             pygame.draw.rect(screen, (80, 80, 80), self.rect, 2)
+            # Add pattern
+            for i in range(0, int(self.rect.width), 20):
+                pygame.draw.line(screen, (60, 60, 70), (self.rect.x + i, self.rect.y), (self.rect.x + i + 10, self.rect.y + self.rect.height), 1)
         elif self.obstacle_type == "water_platform":
             pygame.draw.rect(screen, COLOR_WATER, self.rect)
             pygame.draw.rect(screen, (50, 100, 200), self.rect, 2)
@@ -48,11 +51,11 @@ class MovingPlatform(Obstacle):
         pygame.draw.circle(screen, (200, 200, 255), (self.rect.x + self.rect.width // 2, self.rect.y - 5), 3)
 
 class Coin:
-    def __init__(self, x: float, y: float, coin_type: str = "gold"):
+    def __init__(self, x: float, y: float, coin_type: str = "water"):
         self.rect = pygame.Rect(x, y, 15, 15)
         self.x = x
         self.y = y
-        self.coin_type = coin_type
+        self.coin_type = coin_type  # "water" or "fire"
         self.collected = False
         self.pulse_time = 0
     
@@ -61,13 +64,29 @@ class Coin:
     
     def draw(self, screen):
         if not self.collected:
-            color = (255, 215, 0) if self.coin_type == "gold" else (255, 100, 100)
-            radius = 8 + int(2 * abs(math.sin(self.pulse_time)))
+            if self.coin_type == "water":
+                color = (100, 180, 255)
+                inner_color = (50, 120, 200)
+            else:
+                color = (255, 150, 80)
+                inner_color = (200, 80, 50)
+            
+            radius = 9 + int(3 * abs(math.sin(self.pulse_time)))
             pygame.draw.circle(screen, color, self.rect.center, radius)
-            pygame.draw.circle(screen, (200, 170, 0), self.rect.center, radius - 1, 1)
+            pygame.draw.circle(screen, inner_color, self.rect.center, radius - 2, 2)
+            pygame.draw.circle(screen, (255, 255, 255), self.rect.center, 2)
     
-    def check_collision(self, player_rect):
-        return self.rect.colliderect(player_rect)
+    def check_collision(self, player_rect, player_type: PlayerType):
+        """Only collect if coin matches player type and hasn't been collected"""
+        if self.collected:
+            return False
+        if self.rect.colliderect(player_rect):
+            # Only collect if coin type matches player type
+            if (self.coin_type == "water" and player_type == PlayerType.WATER) or \
+               (self.coin_type == "fire" and player_type == PlayerType.FIRE):
+                self.collected = True
+                return True
+        return False
 
 class Enemy:
     def __init__(self, x: float, y: float, width: float = 30, height: float = 30, 
@@ -121,62 +140,52 @@ class Enemy:
 class Crossbow:
     """Shoots projectiles in one direction"""
     def __init__(self, x: float, y: float, direction: int = 1):
-        self.rect = pygame.Rect(x, y, 20, 20)
         self.x = x
         self.y = y
-        self.direction = direction  # 1 for right, -1 for left
-        self.projectiles = []
+        self.direction = direction
+        self.rect = pygame.Rect(x, y, 20, 20)
         self.shoot_timer = 0
-        self.shoot_interval = 60  # frames between shots
+        self.projectiles = []
     
     def update(self):
         self.shoot_timer += 1
-        if self.shoot_timer >= self.shoot_interval:
-            self.projectiles.append(Projectile(self.x + 10, self.y + 10, self.direction))
+        if self.shoot_timer > 60:
+            self.projectiles.append(Projectile(self.x, self.y, self.direction))
             self.shoot_timer = 0
         
-        # Update projectiles
-        for proj in self.projectiles[:]:
-            proj.update()
-            if proj.rect.x < 0 or proj.rect.x > SCREEN_WIDTH:
-                self.projectiles.remove(proj)
+        for projectile in self.projectiles[:]:
+            projectile.update()
+            if projectile.x < -50 or projectile.x > SCREEN_WIDTH + 50:
+                self.projectiles.remove(projectile)
     
     def draw(self, screen):
-        # Crossbow body
-        pygame.draw.rect(screen, (100, 50, 50), self.rect)
-        pygame.draw.rect(screen, (150, 100, 100), self.rect, 2)
+        pygame.draw.rect(screen, (100, 50, 50), self.rect, border_radius=3)
+        pygame.draw.circle(screen, (150, 100, 100), (self.x + 10, self.y + 10), 5)
         
-        # Arrow indicator
-        arrow_x = self.x + 10 + (5 * self.direction)
-        pygame.draw.line(screen, (255, 200, 0), (self.x + 10, self.y + 10), 
-                        (arrow_x, self.y + 10), 2)
-        
-        # Draw projectiles
-        for proj in self.projectiles:
-            proj.draw(screen)
+        for projectile in self.projectiles:
+            projectile.draw(screen)
     
     def check_collision(self, player_rect):
-        for proj in self.projectiles:
-            if proj.rect.colliderect(player_rect):
-                self.projectiles.remove(proj)
+        for projectile in self.projectiles:
+            if projectile.rect.colliderect(player_rect):
+                self.projectiles.remove(projectile)
                 return True
         return False
 
 class Projectile:
     def __init__(self, x: float, y: float, direction: int = 1):
-        self.rect = pygame.Rect(x, y, 8, 8)
         self.x = x
         self.y = y
         self.direction = direction
-        self.speed = 8
+        self.speed = 5
+        self.rect = pygame.Rect(x, y, 8, 8)
     
     def update(self):
         self.x += self.speed * self.direction
         self.rect.x = self.x
     
     def draw(self, screen):
-        pygame.draw.rect(screen, (255, 200, 0), self.rect)
-        pygame.draw.circle(screen, (255, 255, 100), self.rect.center, 2)
+        pygame.draw.circle(screen, (255, 100, 100), (int(self.x), int(self.y)), 4)
 
 class HazardPool:
     """Water or Lava pools that only certain players can pass through"""
@@ -190,23 +199,39 @@ class HazardPool:
     
     def draw(self, screen):
         if self.hazard_type == "lava":
-            color = COLOR_LAVA
-            pygame.draw.rect(screen, color, self.rect)
-            # Animated lava effect
-            for i in range(3):
-                wave_offset = int(3 * math.sin(self.animation_time + i)) + 2
-                pygame.draw.line(screen, (255, 150, 0), 
-                               (self.rect.x + i * 30, self.rect.y + wave_offset),
-                               (self.rect.x + i * 30 + 30, self.rect.y + wave_offset), 2)
+            # Base lava color with gradient
+            base_color = COLOR_LAVA
+            pygame.draw.rect(screen, base_color, self.rect)
+            
+            # Animated lava bubbles and waves
+            num_waves = int(self.rect.width / 25)
+            for i in range(num_waves):
+                wave_offset = int(4 * math.sin(self.animation_time + i * 0.3)) + 3
+                x_pos = self.rect.x + i * 25
+                pygame.draw.line(screen, (255, 180, 50), 
+                               (x_pos, self.rect.y + self.rect.height // 2 + wave_offset),
+                               (x_pos + 25, self.rect.y + self.rect.height // 2 + wave_offset), 3)
+            
+            # Darker overlay for depth
+            pygame.draw.rect(screen, (200, 80, 0), self.rect, 3)
         else:  # water
             color = COLOR_WATER_POOL
             pygame.draw.rect(screen, color, self.rect)
-            # Ripple animation
-            for i in range(3):
-                wave_offset = int(2 * math.sin(self.animation_time + i)) + 1
-                pygame.draw.line(screen, (100, 180, 255),
-                               (self.rect.x + i * 30, self.rect.y + wave_offset),
-                               (self.rect.x + i * 30 + 30, self.rect.y + wave_offset), 2)
+            
+            # Ripple animation - multiple layers
+            num_ripples = int(self.rect.width / 30)
+            for i in range(num_ripples):
+                ripple_offset = int(3 * math.sin(self.animation_time + i * 0.4)) + 2
+                x_pos = self.rect.x + i * 30
+                pygame.draw.line(screen, (120, 200, 255),
+                               (x_pos, self.rect.y + ripple_offset),
+                               (x_pos + 30, self.rect.y + ripple_offset), 2)
+                pygame.draw.line(screen, (80, 160, 220),
+                               (x_pos, self.rect.y + self.rect.height - ripple_offset),
+                               (x_pos + 30, self.rect.y + self.rect.height - ripple_offset), 2)
+            
+            # Border
+            pygame.draw.rect(screen, (50, 100, 180), self.rect, 3)
     
     def is_dangerous(self, player_type: PlayerType):
         if self.hazard_type == "lava":
@@ -224,10 +249,8 @@ class Door:
     def __init__(self, x: float, y: float, player_type: PlayerType, locked: bool = False):
         self.rect = pygame.Rect(x, y, 40, 60)
         self.player_type = player_type
-        self.x = x
-        self.y = y
-        self.pulse_time = 0
         self.locked = locked
+        self.pulse_time = 0
     
     def update(self):
         self.pulse_time += 0.05
@@ -239,9 +262,13 @@ class Door:
         color = COLOR_WATER if self.player_type == PlayerType.WATER else COLOR_FIRE
         door_color = COLOR_DOOR if self.locked else COLOR_DOOR_OPEN
         
-        # Door frame
-        pygame.draw.rect(screen, door_color, self.rect)
-        pygame.draw.rect(screen, (100, 60, 20) if self.locked else (50, 150, 50), self.rect, 3)
+        # Door frame with shadow
+        shadow_rect = self.rect.copy()
+        shadow_rect.y += 2
+        pygame.draw.rect(screen, (0, 0, 0), shadow_rect, border_radius=5)
+        
+        pygame.draw.rect(screen, door_color, self.rect, border_radius=5)
+        pygame.draw.rect(screen, (100, 60, 20) if self.locked else (50, 150, 50), self.rect, 3, border_radius=5)
         
         # Door handle
         handle_color = (200, 150, 50)
@@ -259,28 +286,28 @@ class ActivationButton:
     """Button that unlocks doors"""
     def __init__(self, x: float, y: float, button_type: str = "water"):
         self.rect = pygame.Rect(x, y, 30, 30)
-        self.button_type = button_type  # "water" or "fire"
-        self.x = x
-        self.y = y
+        self.button_type = button_type
         self.activated = False
         self.pulse_time = 0
+        self.doors_to_unlock = []
     
     def update(self):
-        self.pulse_time += 0.1
+        self.pulse_time += 0.05
     
     def draw(self, screen):
-        color = COLOR_BUTTON_ACTIVE if self.activated else COLOR_BUTTON_INACTIVE
-        pygame.draw.rect(screen, color, self.rect, border_radius=5)
-        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2, border_radius=5)
+        color = COLOR_BUTTON_INACTIVE if not self.activated else COLOR_BUTTON_ACTIVE
+        pulse = int(2 * abs(math.sin(self.pulse_time))) if self.activated else 0
         
-        # Indicator icon
-        icon_color = COLOR_WATER if self.button_type == "water" else COLOR_FIRE
-        pygame.draw.circle(screen, icon_color, self.rect.center, 4)
+        pygame.draw.rect(screen, color, self.rect, border_radius=5)
+        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2 + pulse, border_radius=5)
     
     def check_collision(self, player_rect, player_type: PlayerType):
         if self.rect.colliderect(player_rect):
             if (self.button_type == "water" and player_type == PlayerType.WATER) or \
                (self.button_type == "fire" and player_type == PlayerType.FIRE):
                 self.activated = True
+                # Unlock all doors
+                for door in self.doors_to_unlock:
+                    door.unlock()
                 return True
         return False

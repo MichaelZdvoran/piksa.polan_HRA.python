@@ -21,6 +21,11 @@ class Game:
         self.start_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2, 200, 60, "START GAME")
         self.level_select_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 100, 200, 60, "LEVEL SELECT")
         
+        # Game Over / Death menu buttons
+        # place buttons side-by-side so they fit nicely in death menu
+        self.retry_button = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2, 200, 60, "RETRY LEVEL")
+        self.menu_button = Button(SCREEN_WIDTH // 2 + 20, SCREEN_HEIGHT // 2, 200, 60, "MAIN MENU")
+        
         # Level select buttons
         self.level_buttons = []
         for i in range(1, self.max_level + 1):
@@ -50,13 +55,13 @@ class Game:
                 return False
             
             if event.type == pygame.MOUSEMOTION:
-                if self.state == GameState.MENU:
-                    self.start_button.check_hover(event.pos)
-                    self.level_select_button.check_hover(event.pos)
-                elif self.state == GameState.LEVEL_SELECT:
-                    self.back_button.check_hover(event.pos)
-                    for btn in self.level_buttons:
-                        btn.check_hover(event.pos)
+                self.start_button.check_hover(event.pos)
+                self.level_select_button.check_hover(event.pos)
+                self.retry_button.check_hover(event.pos)
+                self.menu_button.check_hover(event.pos)
+                self.back_button.check_hover(event.pos)
+                for btn in self.level_buttons:
+                    btn.check_hover(event.pos)
             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.state == GameState.MENU:
@@ -72,18 +77,24 @@ class Game:
                         if btn.is_clicked(event.pos) and btn.unlocked:
                             self.start_level(btn.level_num)
                 
+                elif self.state == GameState.GAME_OVER:
+                    if self.retry_button.is_clicked(event.pos):
+                        self.start_level(self.current_level)
+                    elif self.menu_button.is_clicked(event.pos):
+                        self.state = GameState.MENU
+                
                 elif self.state == GameState.LEVEL_COMPLETE:
                     if self.current_level < self.max_level:
                         self.start_level(self.current_level + 1)
                     else:
                         self.state = GameState.MENU
-                
-                elif self.state == GameState.GAME_OVER:
-                    self.state = GameState.MENU
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.state = GameState.MENU
+                    if self.state == GameState.LEVEL_SELECT:
+                        self.state = GameState.MENU
+                    elif self.state == GameState.PLAYING:
+                        self.state = GameState.MENU
         
         return True
     
@@ -115,9 +126,6 @@ class Game:
             
             for button in self.level.buttons:
                 button.update()
-                if button.activated:
-                    for door in getattr(button, 'doors_to_unlock', []):
-                        door.unlock()
             
             for crossbow in self.level.crossbows:
                 crossbow.update()
@@ -130,9 +138,10 @@ class Game:
             
             # Check goal collisions - only if unlocked
             if not self.level.water_goal.locked and not self.level.fire_goal.locked:
-                if self.water_player.rect.colliderect(self.level.water_goal.rect):
-                    if self.fire_player.rect.colliderect(self.level.fire_goal.rect):
-                        self.state = GameState.LEVEL_COMPLETE
+                water_reached = self.water_player.rect.colliderect(self.level.water_goal.rect)
+                fire_reached = self.fire_player.rect.colliderect(self.level.fire_goal.rect)
+                if water_reached and fire_reached:
+                    self.state = GameState.LEVEL_COMPLETE
             
             # Update timer
             elapsed = (pygame.time.get_ticks() - self.level_start_time) / 1000
@@ -144,6 +153,8 @@ class Game:
         if self.state in [GameState.MENU, GameState.LEVEL_SELECT]:
             self.start_button.update()
             self.level_select_button.update()
+            self.retry_button.update()
+            self.menu_button.update()
             for btn in self.level_buttons:
                 btn.update()
     
@@ -166,9 +177,7 @@ class Game:
     
     def _draw_background(self):
         """Draw an animated background with gradient effect"""
-        # Create subtle gradient background
         for y in range(SCREEN_HEIGHT):
-            # Interpolate between dark blue at top and dark purple at bottom
             ratio = y / SCREEN_HEIGHT
             r = int(20 + ratio * 10)
             g = int(20 + ratio * 5)
@@ -179,6 +188,22 @@ class Game:
         self.hud.draw_menu(self.screen)
         self.start_button.draw(self.screen)
         self.level_select_button.draw(self.screen)
+        
+        # Draw water player na levé straně
+        water_player_demo = Player(80, 450, PlayerType.WATER)
+        water_player_demo.draw(self.screen)
+        
+        # Draw fire player na pravé straně
+        fire_player_demo = Player(SCREEN_WIDTH - 110, 450, PlayerType.FIRE)
+        fire_player_demo.draw(self.screen)
+        
+        # Instructions above players
+        font_small = pygame.font.Font(None, 24)
+        water_controls = font_small.render("Arrow Keys", True, (100, 180, 255))
+        fire_controls = font_small.render("WASD", True, (255, 150, 80))
+        
+        self.screen.blit(water_controls, (20, 410))
+        self.screen.blit(fire_controls, (SCREEN_WIDTH - 120, 410))
     
     def _draw_level_select(self):
         self.hud.draw_level_select(self.screen)
@@ -234,6 +259,8 @@ class Game:
     def _draw_game_over(self):
         self._draw_game()
         self.hud.draw_game_over(self.screen)
+        self.retry_button.draw(self.screen)
+        self.menu_button.draw(self.screen)
     
     def run(self):
         running = True
