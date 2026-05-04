@@ -30,7 +30,7 @@ class Obstacle:
 class MovingPlatform(Obstacle):
     """Platform that moves back and forth"""
     def __init__(self, x: float, y: float, width: float, height: float, 
-                 move_distance: float = 100, speed: float = 2):
+                 move_distance: float = 100, speed: float = 0.5):
         super().__init__(x, y, width, height, "solid")
         self.start_x = x
         self.move_distance = move_distance
@@ -40,8 +40,8 @@ class MovingPlatform(Obstacle):
     
     def update(self):
         self.animation_time += self.speed
-        # Use sine wave for smooth movement
-        offset = math.sin(self.animation_time * 0.05) * self.move_distance
+        # Use sine wave for smooth movement - slower and more controlled
+        offset = math.sin(self.animation_time * 0.015) * self.move_distance
         self.rect.x = self.start_x + offset
     
     def draw(self, screen):
@@ -149,7 +149,7 @@ class Crossbow:
     
     def update(self):
         self.shoot_timer += 1
-        if self.shoot_timer > 60:
+        if self.shoot_timer > 120:  # Shoot every 2 seconds (120 frames at 60 FPS)
             self.projectiles.append(Projectile(self.x, self.y, self.direction))
             self.shoot_timer = 0
         
@@ -159,7 +159,14 @@ class Crossbow:
                 self.projectiles.remove(projectile)
     
     def draw(self, screen):
+        # Crossbow body
         pygame.draw.rect(screen, (100, 50, 50), self.rect, border_radius=3)
+        # Crossbow head/arrow holder
+        arrow_color = (200, 100, 80)
+        if self.direction > 0:
+            pygame.draw.polygon(screen, arrow_color, [(self.x + 18, self.y + 5), (self.x + 25, self.y + 10), (self.x + 18, self.y + 15)])
+        else:
+            pygame.draw.polygon(screen, arrow_color, [(self.x + 2, self.y + 5), (self.x - 5, self.y + 10), (self.x + 2, self.y + 15)])
         pygame.draw.circle(screen, (150, 100, 100), (self.x + 10, self.y + 10), 5)
         
         for projectile in self.projectiles:
@@ -177,15 +184,34 @@ class Projectile:
         self.x = x
         self.y = y
         self.direction = direction
-        self.speed = 5
-        self.rect = pygame.Rect(x, y, 8, 8)
+        self.speed = 3
+        self.rect = pygame.Rect(x, y, 12, 6)
     
     def update(self):
         self.x += self.speed * self.direction
         self.rect.x = self.x
     
     def draw(self, screen):
-        pygame.draw.circle(screen, (255, 100, 100), (int(self.x), int(self.y)), 4)
+        # Arrow-like projectile with tip pointing in direction
+        if self.direction > 0:
+            # Arrow pointing right
+            points = [
+                (self.x, self.y - 3),
+                (self.x + 10, self.y),
+                (self.x, self.y + 3),
+                (self.x + 2, self.y)
+            ]
+        else:
+            # Arrow pointing left
+            points = [
+                (self.x + 12, self.y - 3),
+                (self.x + 2, self.y),
+                (self.x + 12, self.y + 3),
+                (self.x + 10, self.y)
+            ]
+        
+        pygame.draw.polygon(screen, (200, 100, 50), points)
+        pygame.draw.polygon(screen, (150, 70, 30), points, 1)
 
 class HazardPool:
     """Water or Lava pools that only certain players can pass through"""
@@ -245,8 +271,8 @@ class HazardPool:
         return False
 
 class Door:
-    """Goal door with activation button requirement"""
-    def __init__(self, x: float, y: float, player_type: PlayerType, locked: bool = False):
+    """Goal door that opens when both players collect their coins"""
+    def __init__(self, x: float, y: float, player_type: PlayerType, locked: bool = True):
         self.rect = pygame.Rect(x, y, 40, 60)
         self.player_type = player_type
         self.locked = locked
@@ -283,7 +309,7 @@ class Door:
             pygame.draw.circle(screen, (255, 50, 50), (self.rect.x + self.rect.width // 2, self.rect.y - 10), 4, 2)
 
 class ActivationButton:
-    """Button that unlocks doors"""
+    """Button that unlocks doors - REMOVED, using coin system instead"""
     def __init__(self, x: float, y: float, button_type: str = "water"):
         self.rect = pygame.Rect(x, y, 30, 30)
         self.button_type = button_type
@@ -295,19 +321,9 @@ class ActivationButton:
         self.pulse_time += 0.05
     
     def draw(self, screen):
-        color = COLOR_BUTTON_INACTIVE if not self.activated else COLOR_BUTTON_ACTIVE
-        pulse = int(2 * abs(math.sin(self.pulse_time))) if self.activated else 0
-        
-        pygame.draw.rect(screen, color, self.rect, border_radius=5)
-        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2 + pulse, border_radius=5)
+        # This button is no longer visible in the game
+        pass
     
     def check_collision(self, player_rect, player_type: PlayerType):
-        if self.rect.colliderect(player_rect):
-            if (self.button_type == "water" and player_type == PlayerType.WATER) or \
-               (self.button_type == "fire" and player_type == PlayerType.FIRE):
-                self.activated = True
-                # Unlock all doors
-                for door in self.doors_to_unlock:
-                    door.unlock()
-                return True
+        # This button does nothing - coin system handles unlocking
         return False

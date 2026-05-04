@@ -32,6 +32,9 @@ PLAYER_JUMP_POWER = 13
 PLAYER_WIDTH = 30
 PLAYER_HEIGHT = 40
 
+# Game mechanics
+COINS_REQUIRED_TO_UNLOCK = None  # Will be set per level, None = auto-detect
+
 # Enums
 class PlayerType(Enum):
     WATER = 1

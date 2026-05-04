@@ -130,6 +130,15 @@ class Game:
             for crossbow in self.level.crossbows:
                 crossbow.update()
             
+            # Check if all coins collected to unlock goals
+            water_coins_remaining = any(c.coin_type == "water" and not c.collected for c in self.level.coins)
+            fire_coins_remaining = any(c.coin_type == "fire" and not c.collected for c in self.level.coins)
+            
+            if not water_coins_remaining:
+                self.level.water_goal.unlock()
+            if not fire_coins_remaining:
+                self.level.fire_goal.unlock()
+            
             self.level.water_goal.update()
             self.level.fire_goal.update()
             
