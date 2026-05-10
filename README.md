@@ -17,12 +17,6 @@ python -m pip install -r requirements.txt
 python src\main.py
 ```
 
-Alternativně lze spustit kořenový launcher:
-
-```powershell
-python main.py
-```
-
 ## Ovládání
 
 - Voda: šipky vlevo/vpravo a šipka nahoru pro skok.
@@ -69,7 +63,6 @@ Build používá `assets/icon.ico`. Pokud se mění název aplikace nebo ikona, 
 │       ├── players.py
 │       ├── ui.py
 │       └── utils.py
-├── main.py
 ├── requirements.txt
 └── README.md
 ```
@@ -121,7 +114,7 @@ Vector2
 V tomto prostředí není příkaz `git` dostupný v PATH, ale jakmile je Git dostupný v terminálu, doporučené průběžné commity jsou:
 
 ```powershell
-git add src main.py requirements.txt
+git add src requirements.txt
 git commit -m "Reorganize game into src package"
 
 git add assets scripts

@@ -73,6 +73,10 @@ class Level:
     def _add_ground(self):
         self._add_platform(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50)
 
+    def _add_edge_crossbows(self, y: float):
+        self.crossbows.append(Crossbow(20, y, 1))
+        self.crossbows.append(Crossbow(SCREEN_WIDTH - 40, y, -1))
+
     def _level_1(self):
         self._add_default_spawns()
         self._add_ground()
@@ -100,8 +104,7 @@ class Level:
 
         self.enemies.append(Enemy(410, 450, patrol_left=390, patrol_right=510))
         self.enemies.append(Enemy(SCREEN_WIDTH - 520, 450, patrol_left=SCREEN_WIDTH - 540, patrol_right=SCREEN_WIDTH - 420))
-        self.crossbows.append(Crossbow(560, 330, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 580, 330, -1))
+        self._add_edge_crossbows(330)
 
         self._add_door_with_platform(710, 315, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(SCREEN_WIDTH - 750, 315, PlayerType.FIRE, self.fire_color)
@@ -139,8 +142,7 @@ class Level:
 
         self.enemies.append(Enemy(325, 435, patrol_left=295, patrol_right=405))
         self.enemies.append(Enemy(SCREEN_WIDTH - 405, 435, patrol_left=SCREEN_WIDTH - 440, patrol_right=SCREEN_WIDTH - 330))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 - 110, 330, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 + 110, 330, -1))
+        self._add_edge_crossbows(330)
 
         self._add_door_with_platform(710, 245, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(SCREEN_WIDTH - 750, 245, PlayerType.FIRE, self.fire_color)
@@ -176,8 +178,7 @@ class Level:
 
         self.enemies.append(Enemy(420, 430, patrol_left=405, patrol_right=510))
         self.enemies.append(Enemy(SCREEN_WIDTH - 525, 430, patrol_left=SCREEN_WIDTH - 545, patrol_right=SCREEN_WIDTH - 440))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 - 120, 255, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 + 120, 255, -1))
+        self._add_edge_crossbows(255)
 
         self._add_door_with_platform(765, 200, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(SCREEN_WIDTH - 805, 200, PlayerType.FIRE, self.fire_color)
@@ -214,8 +215,7 @@ class Level:
 
         self.enemies.append(Enemy(455, 315, patrol_left=355, patrol_right=580))
         self.enemies.append(Enemy(690, 315, patrol_left=610, patrol_right=820))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 - 120, 250, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 + 120, 250, -1))
+        self._add_edge_crossbows(250)
 
         self._add_door_with_platform(305, 235, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(SCREEN_WIDTH - 345, 235, PlayerType.FIRE, self.fire_color)
@@ -258,8 +258,7 @@ class Level:
 
         self.enemies.append(Enemy(305, 455, patrol_left=285, patrol_right=400))
         self.enemies.append(Enemy(SCREEN_WIDTH - 410, 455, patrol_left=SCREEN_WIDTH - 430, patrol_right=SCREEN_WIDTH - 315))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 - 125, 185, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH // 2 + 125, 185, -1))
+        self._add_edge_crossbows(185)
 
         self._add_door_with_platform(SCREEN_WIDTH // 2 - 145, 65, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(SCREEN_WIDTH // 2 + 105, 65, PlayerType.FIRE, self.fire_color)
