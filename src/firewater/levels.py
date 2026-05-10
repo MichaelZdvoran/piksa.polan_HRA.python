@@ -1,5 +1,18 @@
 from .constants import SCREEN_HEIGHT, SCREEN_WIDTH, PlayerType, LEVEL_TIME
-from .obstacles import Coin, Crossbow, Door, Enemy, HazardPool, MovingPlatform, Obstacle
+from .obstacles import (
+    Coin,
+    Crossbow,
+    Door,
+    Enemy,
+    FastEnemy,
+    HazardPool,
+    HeavyEnemy,
+    JumperEnemy,
+    MovingPlatform,
+    Obstacle,
+    VerticalEnemy,
+    ZigZagEnemy,
+)
 
 
 class Level:
@@ -103,7 +116,7 @@ class Level:
             self._add_coin_on_platform(platform, 65, "fire")
 
         self.enemies.append(Enemy(410, 450, patrol_left=390, patrol_right=510))
-        self.enemies.append(Enemy(SCREEN_WIDTH - 520, 450, patrol_left=SCREEN_WIDTH - 540, patrol_right=SCREEN_WIDTH - 420))
+        self.enemies.append(FastEnemy(SCREEN_WIDTH - 520, 450, patrol_left=SCREEN_WIDTH - 540, patrol_right=SCREEN_WIDTH - 420))
         self._add_edge_crossbows(330)
 
         self._add_door_with_platform(710, 315, PlayerType.WATER, self.water_color)
@@ -140,8 +153,8 @@ class Level:
             self._add_coin_on_platform(platform, 65, "fire")
         self._add_coin_on_platform(fire_static[1], 25, "fire")
 
-        self.enemies.append(Enemy(325, 435, patrol_left=295, patrol_right=405))
-        self.enemies.append(Enemy(SCREEN_WIDTH - 405, 435, patrol_left=SCREEN_WIDTH - 440, patrol_right=SCREEN_WIDTH - 330))
+        self.enemies.append(HeavyEnemy(325, 431, patrol_left=295, patrol_right=405))
+        self.enemies.append(VerticalEnemy(SCREEN_WIDTH - 405, 405, patrol_top=375, patrol_bottom=450))
         self._add_edge_crossbows(330)
 
         self._add_door_with_platform(710, 245, PlayerType.WATER, self.water_color)
@@ -176,8 +189,8 @@ class Level:
         for platform in fire_platforms[:4]:
             self._add_coin_on_platform(platform, 60, "fire")
 
-        self.enemies.append(Enemy(420, 430, patrol_left=405, patrol_right=510))
-        self.enemies.append(Enemy(SCREEN_WIDTH - 525, 430, patrol_left=SCREEN_WIDTH - 545, patrol_right=SCREEN_WIDTH - 440))
+        self.enemies.append(JumperEnemy(420, 430, patrol_left=405, patrol_right=510))
+        self.enemies.append(ZigZagEnemy(SCREEN_WIDTH - 525, 430, patrol_left=SCREEN_WIDTH - 545, patrol_right=SCREEN_WIDTH - 440))
         self._add_edge_crossbows(255)
 
         self._add_door_with_platform(765, 200, PlayerType.WATER, self.water_color)
@@ -213,8 +226,8 @@ class Level:
         for platform in [fire_platforms[0], fire_platforms[2], fire_platforms[4], center_bridge]:
             self._add_coin_on_platform(platform, 75, "fire")
 
-        self.enemies.append(Enemy(455, 315, patrol_left=355, patrol_right=580))
-        self.enemies.append(Enemy(690, 315, patrol_left=610, patrol_right=820))
+        self.enemies.append(FastEnemy(455, 315, patrol_left=355, patrol_right=580))
+        self.enemies.append(HeavyEnemy(690, 311, patrol_left=610, patrol_right=820))
         self._add_edge_crossbows(250)
 
         self._add_door_with_platform(305, 235, PlayerType.WATER, self.water_color)
@@ -256,8 +269,8 @@ class Level:
             self._add_coin_on_platform(platform, 62, "fire")
         self._add_coin_on_platform(fire_platforms[4], 25, "fire")
 
-        self.enemies.append(Enemy(305, 455, patrol_left=285, patrol_right=400))
-        self.enemies.append(Enemy(SCREEN_WIDTH - 410, 455, patrol_left=SCREEN_WIDTH - 430, patrol_right=SCREEN_WIDTH - 315))
+        self.enemies.append(JumperEnemy(305, 455, patrol_left=285, patrol_right=400))
+        self.enemies.append(ZigZagEnemy(SCREEN_WIDTH - 410, 455, patrol_left=SCREEN_WIDTH - 430, patrol_right=SCREEN_WIDTH - 315))
         self._add_edge_crossbows(185)
 
         self._add_door_with_platform(SCREEN_WIDTH // 2 - 145, 65, PlayerType.WATER, self.water_color)

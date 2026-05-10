@@ -89,6 +89,11 @@ class Coin:
         return False
 
 class Enemy:
+    body_color = (200, 50, 50)
+    outline_color = (255, 100, 100)
+    eye_color = (255, 255, 255)
+    pupil_color = (0, 0, 0)
+
     def __init__(self, x: float, y: float, width: float = 30, height: float = 30, 
                  patrol_left: float = None, patrol_right: float = None):
         self.rect = pygame.Rect(x, y, width, height)
@@ -121,21 +126,86 @@ class Enemy:
     
     def draw(self, screen):
         # Body with gradient effect
-        pygame.draw.rect(screen, (200, 50, 50), self.rect, border_radius=5)
-        pygame.draw.rect(screen, (255, 100, 100), self.rect, 2, border_radius=5)
+        pygame.draw.rect(screen, self.body_color, self.rect, border_radius=5)
+        pygame.draw.rect(screen, self.outline_color, self.rect, 2, border_radius=5)
         
         # Animated eyes looking in direction
         eye_offset = int(2 * math.sin(self.animation_time)) * self.direction
         left_eye_x = self.rect.x + 8 + eye_offset
         right_eye_x = self.rect.x + 20 + eye_offset
         
-        pygame.draw.circle(screen, (255, 255, 255), (left_eye_x, self.rect.y + 10), 3)
-        pygame.draw.circle(screen, (255, 255, 255), (right_eye_x, self.rect.y + 10), 3)
-        pygame.draw.circle(screen, (0, 0, 0), (left_eye_x, self.rect.y + 10), 1)
-        pygame.draw.circle(screen, (0, 0, 0), (right_eye_x, self.rect.y + 10), 1)
+        pygame.draw.circle(screen, self.eye_color, (left_eye_x, self.rect.y + 10), 3)
+        pygame.draw.circle(screen, self.eye_color, (right_eye_x, self.rect.y + 10), 3)
+        pygame.draw.circle(screen, self.pupil_color, (left_eye_x, self.rect.y + 10), 1)
+        pygame.draw.circle(screen, self.pupil_color, (right_eye_x, self.rect.y + 10), 1)
     
     def check_collision(self, player_rect):
         return self.rect.colliderect(player_rect)
+
+class FastEnemy(Enemy):
+    body_color = (255, 90, 60)
+    outline_color = (255, 180, 90)
+
+    def __init__(self, x: float, y: float, width: float = 28, height: float = 28,
+                 patrol_left: float = None, patrol_right: float = None):
+        super().__init__(x, y, width, height, patrol_left, patrol_right)
+        self.speed = 3
+
+class HeavyEnemy(Enemy):
+    body_color = (120, 60, 160)
+    outline_color = (190, 130, 240)
+
+    def __init__(self, x: float, y: float, width: float = 38, height: float = 34,
+                 patrol_left: float = None, patrol_right: float = None):
+        super().__init__(x, y, width, height, patrol_left, patrol_right)
+        self.speed = 1
+
+class VerticalEnemy(Enemy):
+    body_color = (70, 180, 120)
+    outline_color = (130, 255, 180)
+
+    def __init__(self, x: float, y: float, width: float = 30, height: float = 30,
+                 patrol_top: float = None, patrol_bottom: float = None):
+        super().__init__(x, y, width, height, x, x)
+        self.speed = 2
+        self.vertical_direction = random.choice([-1, 1])
+        self.patrol_top = patrol_top if patrol_top is not None else y - 80
+        self.patrol_bottom = patrol_bottom if patrol_bottom is not None else y + 80
+
+    def update(self):
+        self.pos_y += self.speed * self.vertical_direction
+        self.animation_time += 0.05
+        if self.pos_y <= self.patrol_top or self.pos_y >= self.patrol_bottom:
+            self.vertical_direction *= -1
+        self.rect.y = self.pos_y
+
+class JumperEnemy(Enemy):
+    body_color = (230, 190, 50)
+    outline_color = (255, 230, 120)
+
+    def __init__(self, x: float, y: float, width: float = 30, height: float = 30,
+                 patrol_left: float = None, patrol_right: float = None):
+        super().__init__(x, y, width, height, patrol_left, patrol_right)
+        self.base_y = y
+        self.speed = 1.7
+
+    def update(self):
+        super().update()
+        self.rect.y = self.base_y + int(math.sin(self.animation_time * 3) * 18)
+
+class ZigZagEnemy(Enemy):
+    body_color = (80, 160, 230)
+    outline_color = (150, 220, 255)
+
+    def __init__(self, x: float, y: float, width: float = 30, height: float = 30,
+                 patrol_left: float = None, patrol_right: float = None):
+        super().__init__(x, y, width, height, patrol_left, patrol_right)
+        self.base_y = y
+        self.speed = 2.2
+
+    def update(self):
+        super().update()
+        self.rect.y = self.base_y + int(math.sin(self.animation_time * 4) * 12)
 
 class Crossbow:
     """Shoots projectiles in one direction"""

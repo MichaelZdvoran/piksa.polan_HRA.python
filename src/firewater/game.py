@@ -20,11 +20,16 @@ class Game:
         self.max_level = 5
         self.start_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2, 200, 60, "START GAME")
         self.level_select_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 100, 200, 60, "LEVEL SELECT")
+        self.settings_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 200, 200, 60, "SETTINGS")
         
         # Game Over / Death menu buttons
         # place buttons side-by-side so they fit nicely in death menu
-        self.retry_button = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2, 200, 60, "RETRY LEVEL")
-        self.menu_button = Button(SCREEN_WIDTH // 2 + 20, SCREEN_HEIGHT // 2, 200, 60, "MAIN MENU")
+        self.retry_button = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 + 100, 200, 60, "RETRY LEVEL")
+        self.menu_button = Button(SCREEN_WIDTH // 2 + 20, SCREEN_HEIGHT // 2 + 100, 200, 60, "MAIN MENU")
+        self.resume_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 80, 200, 60, "RESUME")
+        self.pause_settings_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2, 200, 60, "SETTINGS")
+        self.timer_toggle_button = Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 - 30, 260, 60, "TIMER: ON")
+        self.settings_back_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 70, 200, 60, "BACK")
         
         # Level select buttons
         self.level_buttons = []
@@ -40,6 +45,9 @@ class Game:
         self.level = None
         self.level_time_remaining = 0
         self.level_start_time = 0
+        self.pause_started_at = 0
+        self.timer_enabled = True
+        self.settings_return_state = GameState.MENU
     
     def start_level(self, level_num: int):
         self.current_level = level_num
@@ -48,6 +56,30 @@ class Game:
         self.fire_player = Player(*self.level.fire_spawn, PlayerType.FIRE, COLOR_FIRE)
         self.state = GameState.PLAYING
         self.level_start_time = pygame.time.get_ticks()
+        self.pause_started_at = 0
+
+    def pause_game(self):
+        if self.state == GameState.PLAYING:
+            self.state = GameState.PAUSED
+            self.pause_started_at = pygame.time.get_ticks()
+
+    def resume_game(self):
+        if self.state == GameState.PAUSED:
+            if self.pause_started_at:
+                self.level_start_time += pygame.time.get_ticks() - self.pause_started_at
+            self.pause_started_at = 0
+            self.state = GameState.PLAYING
+
+    def open_settings(self, return_state: GameState):
+        self.settings_return_state = return_state
+        self.state = GameState.SETTINGS
+
+    def close_settings(self):
+        self.state = self.settings_return_state
+
+    def toggle_timer(self):
+        self.timer_enabled = not self.timer_enabled
+        self.timer_toggle_button.text = "TIMER: ON" if self.timer_enabled else "TIMER: OFF"
     
     def handle_events(self):
         for event in pygame.event.get():
@@ -57,8 +89,13 @@ class Game:
             if event.type == pygame.MOUSEMOTION:
                 self.start_button.check_hover(event.pos)
                 self.level_select_button.check_hover(event.pos)
+                self.settings_button.check_hover(event.pos)
                 self.retry_button.check_hover(event.pos)
                 self.menu_button.check_hover(event.pos)
+                self.resume_button.check_hover(event.pos)
+                self.pause_settings_button.check_hover(event.pos)
+                self.timer_toggle_button.check_hover(event.pos)
+                self.settings_back_button.check_hover(event.pos)
                 self.back_button.check_hover(event.pos)
                 for btn in self.level_buttons:
                     btn.check_hover(event.pos)
@@ -69,6 +106,8 @@ class Game:
                         self.start_level(1)
                     elif self.level_select_button.is_clicked(event.pos):
                         self.state = GameState.LEVEL_SELECT
+                    elif self.settings_button.is_clicked(event.pos):
+                        self.open_settings(GameState.MENU)
                 
                 elif self.state == GameState.LEVEL_SELECT:
                     if self.back_button.is_clicked(event.pos):
@@ -82,6 +121,22 @@ class Game:
                         self.start_level(self.current_level)
                     elif self.menu_button.is_clicked(event.pos):
                         self.state = GameState.MENU
+
+                elif self.state == GameState.PAUSED:
+                    if self.resume_button.is_clicked(event.pos):
+                        self.resume_game()
+                    elif self.pause_settings_button.is_clicked(event.pos):
+                        self.open_settings(GameState.PAUSED)
+                    elif self.retry_button.is_clicked(event.pos):
+                        self.start_level(self.current_level)
+                    elif self.menu_button.is_clicked(event.pos):
+                        self.state = GameState.MENU
+
+                elif self.state == GameState.SETTINGS:
+                    if self.timer_toggle_button.is_clicked(event.pos):
+                        self.toggle_timer()
+                    elif self.settings_back_button.is_clicked(event.pos):
+                        self.close_settings()
                 
                 elif self.state == GameState.LEVEL_COMPLETE:
                     if self.current_level < self.max_level:
@@ -94,7 +149,16 @@ class Game:
                     if self.state == GameState.LEVEL_SELECT:
                         self.state = GameState.MENU
                     elif self.state == GameState.PLAYING:
-                        self.state = GameState.MENU
+                        self.pause_game()
+                    elif self.state == GameState.PAUSED:
+                        self.resume_game()
+                    elif self.state == GameState.SETTINGS:
+                        self.close_settings()
+                elif event.key == pygame.K_p:
+                    if self.state == GameState.PLAYING:
+                        self.pause_game()
+                    elif self.state == GameState.PAUSED:
+                        self.resume_game()
         
         return True
     
@@ -156,14 +220,19 @@ class Game:
             elapsed = (pygame.time.get_ticks() - self.level_start_time) / 1000
             self.level_time_remaining = max(0, self.level.time_limit - elapsed)
             
-            if self.level_time_remaining <= 0:
+            if self.timer_enabled and self.level_time_remaining <= 0:
                 self.state = GameState.GAME_OVER
         
-        if self.state in [GameState.MENU, GameState.LEVEL_SELECT]:
+        if self.state in [GameState.MENU, GameState.LEVEL_SELECT, GameState.SETTINGS, GameState.PAUSED]:
             self.start_button.update()
             self.level_select_button.update()
+            self.settings_button.update()
             self.retry_button.update()
             self.menu_button.update()
+            self.resume_button.update()
+            self.pause_settings_button.update()
+            self.timer_toggle_button.update()
+            self.settings_back_button.update()
             for btn in self.level_buttons:
                 btn.update()
     
@@ -177,6 +246,10 @@ class Game:
             self._draw_level_select()
         elif self.state == GameState.PLAYING:
             self._draw_game()
+        elif self.state == GameState.PAUSED:
+            self._draw_pause()
+        elif self.state == GameState.SETTINGS:
+            self._draw_settings()
         elif self.state == GameState.LEVEL_COMPLETE:
             self._draw_level_complete()
         elif self.state == GameState.GAME_OVER:
@@ -197,6 +270,7 @@ class Game:
         self.hud.draw_menu(self.screen)
         self.start_button.draw(self.screen)
         self.level_select_button.draw(self.screen)
+        self.settings_button.draw(self.screen)
         
         # Draw water player na levĂ© stranÄ›
         water_player_demo = Player(80, 450, PlayerType.WATER, COLOR_WATER)
@@ -259,7 +333,21 @@ class Game:
         
         # Draw UI
         self.hud.draw_game_hud(self.screen, self.current_level, self.level_time_remaining, 
-                               self.water_player.coins_collected, self.fire_player.coins_collected)
+                               self.water_player.coins_collected, self.fire_player.coins_collected,
+                               self.timer_enabled)
+
+    def _draw_pause(self):
+        self._draw_game()
+        self.hud.draw_pause(self.screen)
+        self.resume_button.draw(self.screen)
+        self.pause_settings_button.draw(self.screen)
+        self.retry_button.draw(self.screen)
+        self.menu_button.draw(self.screen)
+
+    def _draw_settings(self):
+        self.hud.draw_settings(self.screen, self.timer_enabled, self.settings_return_state == GameState.PAUSED)
+        self.timer_toggle_button.draw(self.screen)
+        self.settings_back_button.draw(self.screen)
     
     def _draw_level_complete(self):
         self._draw_game()

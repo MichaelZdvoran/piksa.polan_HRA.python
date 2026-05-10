@@ -67,7 +67,7 @@ class HUD:
         self.font_small = pygame.font.Font(None, 36)
         self.font_tiny = pygame.font.Font(None, 24)
     
-    def draw_game_hud(self, screen, level_num, time_remaining, water_coins, fire_coins):
+    def draw_game_hud(self, screen, level_num, time_remaining, water_coins, fire_coins, timer_enabled=True):
         # Draw HUD background panel
         hud_bg = pygame.Surface((SCREEN_WIDTH, 120))
         hud_bg.set_alpha(40)
@@ -79,13 +79,17 @@ class HUD:
         screen.blit(level_text, (20, 20))
         
         # Timer
-        minutes = int(time_remaining) // 60
-        seconds = int(time_remaining) % 60
-        time_text = self.font_medium.render(f"{minutes}:{seconds:02d}", True, COLOR_TEXT)
+        if timer_enabled:
+            minutes = int(time_remaining) // 60
+            seconds = int(time_remaining) % 60
+            timer_label = f"{minutes}:{seconds:02d}"
+        else:
+            timer_label = "NO LIMIT"
+        time_text = self.font_medium.render(timer_label, True, COLOR_TEXT)
         time_rect = time_text.get_rect(topright=(SCREEN_WIDTH - 20, 20))
         screen.blit(time_text, time_rect)
         
-        if time_remaining < 30:
+        if timer_enabled and time_remaining < 30:
             warning = self.font_small.render("Time Running Out!", True, COLOR_ERROR)
             screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 20))
         
@@ -170,4 +174,33 @@ class HUD:
         
         retry_text = self.font_small.render("Click to return to menu", True, COLOR_TEXT)
         screen.blit(retry_text, (SCREEN_WIDTH // 2 - retry_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+
+    def draw_pause(self, screen):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(190)
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+
+        title = self.font_large.render("PAUSED", True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 180))
+
+        hint = self.font_tiny.render("Press P or ESC to resume", True, COLOR_TEXT)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT // 2 - 120))
+
+    def draw_settings(self, screen, timer_enabled, opened_from_pause):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(230)
+        overlay.fill((20, 20, 30))
+        screen.blit(overlay, (0, 0))
+
+        title = self.font_large.render("SETTINGS", True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
+
+        source = "Opened from pause" if opened_from_pause else "Main menu settings"
+        source_text = self.font_tiny.render(source, True, COLOR_TEXT)
+        screen.blit(source_text, (SCREEN_WIDTH // 2 - source_text.get_width() // 2, 190))
+
+        timer_text = "Timer is enabled" if timer_enabled else "Timer is disabled"
+        description = self.font_small.render(timer_text, True, COLOR_SUCCESS if timer_enabled else COLOR_ERROR)
+        screen.blit(description, (SCREEN_WIDTH // 2 - description.get_width() // 2, SCREEN_HEIGHT // 2 - 95))
 

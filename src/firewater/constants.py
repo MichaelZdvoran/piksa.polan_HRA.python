@@ -46,4 +46,6 @@ class GameState(Enum):
     PLAYING = 3
     LEVEL_COMPLETE = 4
     GAME_OVER = 5
+    SETTINGS = 6
+    PAUSED = 7
 
