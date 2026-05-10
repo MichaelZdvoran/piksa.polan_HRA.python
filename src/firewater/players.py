@@ -22,6 +22,7 @@ class Player:
         self.coins_collected = 0
         self.animation_time = 0
         self.direction = 1
+        self.jump_spark_time = 0
     
     def handle_input(self, keys):
         if self.player_type == PlayerType.WATER:
@@ -55,6 +56,8 @@ class Player:
     def update(self, obstacles: List, coins: List, enemies: List, 
                hazard_pools: List, crossbows: List, buttons: List):
         self.animation_time += 0.1
+        if not self.on_ground:
+            self.jump_spark_time += 0.2
         
         self.vel.y += self.gravity
         self.pos = self.pos + self.vel
@@ -116,33 +119,127 @@ class Player:
         return True
     
     def draw(self, screen):
-        color = self.color
-        bob_offset = int(2 * math.sin(self.animation_time)) if self.on_ground else 0
-        
-        # Main body
-        pygame.draw.rect(screen, color, (self.pos.x, self.pos.y + bob_offset, self.width, self.height), border_radius=5)
-        
-        # Lighter shade highlight
-        light_color = tuple(min(255, c + 50) for c in color)
-        pygame.draw.rect(screen, light_color, (self.pos.x + 2, self.pos.y + bob_offset + 2, self.width - 4, 8), border_radius=3)
-        
-        # Border glow effect
-        glow_width = 3 if self.on_ground else 2
-        pygame.draw.rect(screen, (255, 255, 255), (self.pos.x, self.pos.y + bob_offset, self.width, self.height), glow_width, border_radius=5)
-        
-        # Eyes looking in direction
-        eye_color = (255, 255, 255)
-        left_eye_x = self.pos.x + 8 + (self.direction * 2)
-        right_eye_x = self.pos.x + 22 + (self.direction * 2)
-        eye_y = self.pos.y + 10 + bob_offset
-        
-        pygame.draw.circle(screen, eye_color, (left_eye_x, eye_y), 3)
-        pygame.draw.circle(screen, eye_color, (right_eye_x, eye_y), 3)
-        pygame.draw.circle(screen, (0, 0, 0), (left_eye_x + self.direction, eye_y), 1)
-        pygame.draw.circle(screen, (0, 0, 0), (right_eye_x + self.direction, eye_y), 1)
-        
-        # Mouth (smile when on ground)
+        moving = abs(self.vel.x) > 0.1
+        bob_offset = int(3 * math.sin(self.animation_time * 2.8)) if self.on_ground and moving else 0
+        jump_stretch = max(-5, min(6, int(-self.vel.y * 0.28))) if not self.on_ground else 0
+        run_cycle = self.animation_time * 5.5 if moving else self.animation_time * 1.5
+
+        if self.player_type == PlayerType.WATER:
+            self._draw_water_sprite(screen, bob_offset, jump_stretch, run_cycle, moving)
+        else:
+            self._draw_fire_sprite(screen, bob_offset, jump_stretch, run_cycle, moving)
+
+    def _draw_shadow(self, screen, bob_offset):
+        shadow_width = max(18, self.width - abs(int(self.vel.y * 0.35)))
+        shadow = pygame.Surface((shadow_width, 8), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow, (0, 0, 0, 70), shadow.get_rect())
+        screen.blit(shadow, (self.pos.x + (self.width - shadow_width) // 2, self.pos.y + self.height + 2 + max(0, bob_offset)))
+
+    def _draw_water_sprite(self, screen, bob_offset, jump_stretch, run_cycle, moving):
+        x = int(self.pos.x)
+        y = int(self.pos.y + bob_offset)
+        body_h = self.height + jump_stretch
+        center_x = x + self.width // 2
+        splash = abs(math.sin(run_cycle))
+
+        self._draw_shadow(screen, bob_offset)
+        for i in range(3 if moving else 1):
+            droplet_x = center_x - self.direction * (18 + i * 6)
+            droplet_y = y + 30 + int(math.sin(run_cycle + i) * 5)
+            pygame.draw.circle(screen, (70, 180, 255), (droplet_x, droplet_y), max(2, 4 - i))
+
+        body_rect = pygame.Rect(x + 2, y + 6 - jump_stretch // 2, self.width - 4, body_h - 4)
+        pygame.draw.ellipse(screen, (44, 116, 220), body_rect.inflate(8, 4))
+        pygame.draw.ellipse(screen, self.color, body_rect)
+        pygame.draw.polygon(screen, self.color, [(center_x, y - 4 - jump_stretch), (x + 5, y + 15), (x + self.width - 5, y + 15)])
+        pygame.draw.polygon(screen, (170, 230, 255), [(center_x - 4, y + 3), (center_x - 12, y + 15), (center_x + 2, y + 13)])
+
+        arm_y = y + 24
+        arm_swing = int(math.sin(run_cycle) * 7) if moving else 0
+        pygame.draw.line(screen, (180, 235, 255), (x + 4, arm_y), (x - 5, arm_y + arm_swing), 4)
+        pygame.draw.line(screen, (180, 235, 255), (x + self.width - 4, arm_y), (x + self.width + 5, arm_y - arm_swing), 4)
+
+        foot_y = y + self.height + 1
+        step = int(math.sin(run_cycle) * 6) if moving else 0
+        pygame.draw.line(screen, (35, 100, 200), (center_x - 6, y + self.height - 3), (center_x - 11 - step, foot_y), 4)
+        pygame.draw.line(screen, (35, 100, 200), (center_x + 6, y + self.height - 3), (center_x + 11 + step, foot_y), 4)
+
+        for i in range(2):
+            wave_y = y + 30 + i * 7
+            pygame.draw.arc(screen, (205, 245, 255), (x + 5, wave_y, self.width - 10, 8), 0, math.pi, 2)
+
+        self._draw_face(screen, x, y + 4, (5, 35, 70))
+        if not self.on_ground:
+            for i in range(4):
+                px = x + 3 + i * 7
+                py = y + self.height - 2 + int(math.sin(self.jump_spark_time + i) * 5)
+                pygame.draw.circle(screen, (155, 225, 255), (px, py), 2 + int(splash))
+
+    def _draw_fire_sprite(self, screen, bob_offset, jump_stretch, run_cycle, moving):
+        x = int(self.pos.x)
+        y = int(self.pos.y + bob_offset)
+        center_x = x + self.width // 2
+        flame_tip = y - 7 - jump_stretch + int(math.sin(self.animation_time * 4) * 3)
+
+        self._draw_shadow(screen, bob_offset)
+        for i in range(4 if moving else 2):
+            ember_x = center_x - self.direction * (17 + i * 5)
+            ember_y = y + 28 - i * 7 + int(math.sin(run_cycle + i) * 4)
+            pygame.draw.circle(screen, (255, 178, 64), (ember_x, ember_y), max(2, 4 - i))
+
+        outer = [
+            (center_x, flame_tip),
+            (x + self.width + 2, y + 13),
+            (x + self.width - 1, y + self.height - 2),
+            (x + 4, y + self.height),
+            (x - 3, y + 14),
+        ]
+        inner = [
+            (center_x + 2, y + 3),
+            (x + self.width - 6, y + 17),
+            (x + self.width - 9, y + self.height - 5),
+            (x + 9, y + self.height - 4),
+            (x + 7, y + 18),
+        ]
+        core = [
+            (center_x + int(math.sin(run_cycle) * 2), y + 10),
+            (center_x + 8, y + 26),
+            (center_x + 2, y + self.height - 7),
+            (center_x - 8, y + 27),
+        ]
+        pygame.draw.polygon(screen, (154, 34, 26), outer)
+        pygame.draw.polygon(screen, self.color, inner)
+        pygame.draw.polygon(screen, (255, 220, 92), core)
+
+        arm_y = y + 24
+        arm_swing = int(math.sin(run_cycle) * 8) if moving else 0
+        pygame.draw.line(screen, (255, 172, 65), (x + 5, arm_y), (x - 5, arm_y + arm_swing), 4)
+        pygame.draw.line(screen, (255, 172, 65), (x + self.width - 5, arm_y), (x + self.width + 5, arm_y - arm_swing), 4)
+
+        foot_y = y + self.height + 1
+        step = int(math.sin(run_cycle) * 6) if moving else 0
+        pygame.draw.line(screen, (126, 34, 24), (center_x - 6, y + self.height - 5), (center_x - 12 - step, foot_y), 4)
+        pygame.draw.line(screen, (126, 34, 24), (center_x + 6, y + self.height - 5), (center_x + 12 + step, foot_y), 4)
+
+        self._draw_face(screen, x, y + 5, (65, 18, 10))
+        if not self.on_ground:
+            for i in range(5):
+                px = x + 4 + i * 6
+                py = y + self.height - 1 + int(math.sin(self.jump_spark_time + i * 0.7) * 7)
+                pygame.draw.circle(screen, (255, 205, 88), (px, py), 2)
+
+    def _draw_face(self, screen, x, y, pupil_color):
+        eye_y = y + 12
+        left_eye_x = x + 9 + (self.direction * 2)
+        right_eye_x = x + 21 + (self.direction * 2)
+        pygame.draw.circle(screen, (255, 255, 255), (left_eye_x, eye_y), 4)
+        pygame.draw.circle(screen, (255, 255, 255), (right_eye_x, eye_y), 4)
+        pygame.draw.circle(screen, pupil_color, (left_eye_x + self.direction, eye_y), 2)
+        pygame.draw.circle(screen, pupil_color, (right_eye_x + self.direction, eye_y), 2)
+
+        mouth_y = y + 27
         if self.on_ground:
-            mouth_y = self.pos.y + 28 + bob_offset
-            pygame.draw.line(screen, (0, 0, 0), (self.pos.x + 10, mouth_y), (self.pos.x + 20, mouth_y), 1)
+            pygame.draw.arc(screen, pupil_color, (x + 10, mouth_y - 5, 10, 8), 0, math.pi, 2)
+        else:
+            pygame.draw.circle(screen, pupil_color, (x + 15, mouth_y), 2)
 

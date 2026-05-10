@@ -1,5 +1,6 @@
 ﻿import pygame
 import sys
+import math
 from .constants import (SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COLOR_BG, 
                        GameState, PlayerType, LEVEL_TIME, COLOR_WATER, COLOR_FIRE)
 from .players import Player
@@ -42,6 +43,11 @@ class Game:
         
         self.water_player = None
         self.fire_player = None
+        self.menu_water_player = Player(110, 500, PlayerType.WATER, COLOR_WATER)
+        self.menu_fire_player = Player(SCREEN_WIDTH - 170, 500, PlayerType.FIRE, COLOR_FIRE)
+        for demo_player in (self.menu_water_player, self.menu_fire_player):
+            demo_player.width = 54
+            demo_player.height = 72
         self.level = None
         self.level_time_remaining = 0
         self.level_start_time = 0
@@ -271,22 +277,36 @@ class Game:
         self.start_button.draw(self.screen)
         self.level_select_button.draw(self.screen)
         self.settings_button.draw(self.screen)
-        
-        # Draw water player na levĂ© stranÄ›
-        water_player_demo = Player(80, 450, PlayerType.WATER, COLOR_WATER)
-        water_player_demo.draw(self.screen)
-        
-        # Draw fire player na pravĂ© stranÄ›
-        fire_player_demo = Player(SCREEN_WIDTH - 110, 450, PlayerType.FIRE, COLOR_FIRE)
-        fire_player_demo.draw(self.screen)
-        
+
+        menu_time = pygame.time.get_ticks() / 1000
+        self.menu_water_player.pos.x = 120 + math.sin(menu_time * 1.8) * 18
+        self.menu_water_player.pos.y = 505 - max(0, math.sin(menu_time * 2.1)) * 35
+        self.menu_water_player.vel.x = math.cos(menu_time * 1.8) * 5
+        self.menu_water_player.vel.y = -math.cos(menu_time * 2.1) * 8
+        self.menu_water_player.direction = 1
+        self.menu_water_player.on_ground = math.sin(menu_time * 2.1) <= 0.08
+        self.menu_water_player.animation_time += 0.12
+        self.menu_water_player.draw(self.screen)
+
+        self.menu_fire_player.pos.x = SCREEN_WIDTH - 174 + math.sin(menu_time * 2.0 + 1.2) * 18
+        self.menu_fire_player.pos.y = 505 - max(0, math.sin(menu_time * 2.3 + 0.8)) * 38
+        self.menu_fire_player.vel.x = math.cos(menu_time * 2.0 + 1.2) * 5
+        self.menu_fire_player.vel.y = -math.cos(menu_time * 2.3 + 0.8) * 8
+        self.menu_fire_player.direction = -1
+        self.menu_fire_player.on_ground = math.sin(menu_time * 2.3 + 0.8) <= 0.08
+        self.menu_fire_player.animation_time += 0.12
+        self.menu_fire_player.draw(self.screen)
+
+        pygame.draw.line(self.screen, (70, 160, 230), (70, 585), (280, 585), 5)
+        pygame.draw.line(self.screen, (245, 95, 45), (SCREEN_WIDTH - 280, 585), (SCREEN_WIDTH - 70, 585), 5)
+
         # Instructions above players
         font_small = pygame.font.Font(None, 24)
         water_controls = font_small.render("Arrow Keys", True, (100, 180, 255))
         fire_controls = font_small.render("WASD", True, (255, 150, 80))
         
-        self.screen.blit(water_controls, (20, 410))
-        self.screen.blit(fire_controls, (SCREEN_WIDTH - 120, 410))
+        self.screen.blit(water_controls, (95, 455))
+        self.screen.blit(fire_controls, (SCREEN_WIDTH - 178, 455))
     
     def _draw_level_select(self):
         self.hud.draw_level_select(self.screen)
