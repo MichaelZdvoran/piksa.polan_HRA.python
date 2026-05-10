@@ -1,44 +1,143 @@
-# Fire & Water: Puzzle Adventure
+﻿# Fire & Water: Puzzle Adventure
 
-Jednoduchá kooperativní plošinovka pro dva hráče vytvořená v Pythonu pomocí knihovny Pygame. Hráči ovládají postavy Ohně a Vody, sbírají mince své barvy a snaží se společně dostat k východu.
+Kooperativní 2D plošinovka pro dva hráče vytvořená v Pythonu a Pygame. Hráč Voda a hráč Oheň sbírají vlastní mince, vyhýbají se nebezpečným zónám a po odemčení dveří musí oba dojít do cíle v časovém limitu.
 
-## Vlastnosti
-- **Kooperace:** Oba hráči musí spolupracovat, aby odemkli dveře do další úrovně.
-- **Mechaniky:** Pohyblivé plošiny, nebezpečné kaluže (lávu/vodu), nepřátelé a kuše.
-- **Úrovně:** Celkem 5 úrovní se stoupající obtížností.
-- **OOP Architektura:** Kód je plně objektově orientovaný pro snadnou rozšiřitelnost.
+## Splněné požadavky
 
-## Požadavky
-- Python 3.x
-- Pygame
+- Dokumentace je přímo v repozitáři v souboru `README.md`.
+- Kód je objektově orientovaný a rozdělený do logických složek (`src/firewater`, `assets`, `docs`, `scripts`).
+- Hra má připravený build do `.exe` pomocí PyInstalleru a používá vlastní ikonu `assets/icon.ico`.
+- Mapa struktury projektu, dědičnosti a polymorfismu je níže a samostatně v `docs/project_map.md`.
+- Repozitář je připravený na průběžné commity; příkazy jsou v části Git workflow.
 
-## Instalace a spuštění
-1. Nainstalujte závislosti:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Spusťte hru:
-   ```bash
-   python src/main.py
-   ```
+## Spuštění ze zdrojového kódu
+
+```powershell
+python -m pip install -r requirements.txt
+python src\main.py
+```
+
+Alternativně lze spustit kořenový launcher:
+
+```powershell
+python main.py
+```
 
 ## Ovládání
-- **Voda:** Šipky (pohyb a skok)
-- **Oheň:** Klávesy WASD (pohyb a skok)
-- **Menu:** Myš a klávesa ESC
+
+- Voda: šipky vlevo/vpravo a šipka nahoru pro skok.
+- Oheň: `A`, `D` a `W` pro skok.
+- Menu: myš.
+- Návrat z levelu nebo výběru levelu: `Esc`.
+
+## Build do .exe
+
+```powershell
+.\scripts\build_exe.ps1
+```
+
+Výsledek se vytvoří jako:
+
+```text
+dist\FireWaterPuzzleAdventure.exe
+```
+
+Build používá `assets/icon.ico`. Pokud se mění název aplikace nebo ikona, upravte `scripts/build_exe.ps1`.
 
 ## Struktura projektu
-- `src/`: Zdrojové kódy hry.
-- `assets/`: Grafické podklady a ikony.
 
-## Kompilace do .exe
-Pro vytvoření spustitelného souboru s vlastní ikonou použijte příkaz:
-```bash
-pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "src;src" src/main.py
+```text
+.
+├── assets/
+│   └── icon.ico
+├── dist/
+│   └── FireWaterPuzzleAdventure.exe
+├── docs/
+│   ├── project_map.md
+│   └── legacy_single_file_prototype.py
+├── scripts/
+│   └── build_exe.ps1
+├── src/
+│   ├── main.py
+│   └── firewater/
+│       ├── __init__.py
+│       ├── constants.py
+│       ├── game.py
+│       ├── goals.py
+│       ├── levels.py
+│       ├── obstacles.py
+│       ├── players.py
+│       ├── ui.py
+│       └── utils.py
+├── main.py
+├── requirements.txt
+└── README.md
 ```
-```
-Výsledný soubor naleznete ve složce `dist/`.
 
----
-Autor: piksa.polan
-Licence: MIT
+## Mapa tříd a OOP
+
+```text
+Game
+├── vlastní pygame okno, hlavní smyčka, stavy hry
+├── používá Level, Player, HUD, Button, LevelSelectButton
+└── volá polymorfně update()/draw() nad objekty levelu
+
+Level
+├── skládá konkrétní levely
+├── drží seznamy obstacles, coins, enemies, hazard_pools, moving_platforms, crossbows
+└── vytváří Door cíle pro hráče Water/Fire
+
+Player
+├── zapouzdřuje pozici, rychlost, input, kolize, sběr mincí a kreslení
+└── typ hráče určuje ovládání a interakci s hazardy
+
+Obstacle
+└── MovingPlatform : Obstacle
+    ├── dědí obdélníkovou kolizi a základní platformu
+    └── přidává pohyb přes update() a vlastní draw()
+
+Button
+└── LevelSelectButton : Button
+    ├── dědí klikání/hover stav
+    └── mění vykreslení podle uzamčení levelu
+
+Coin, Enemy, Crossbow, Projectile, HazardPool, Door, ActivationButton
+├── samostatné herní objekty se zapouzdřenými daty a metodami
+└── používají shodná rozhraní typu update(), draw() nebo check_collision()
+
+Vector2
+└── datová třída pro vektorovou matematiku hráče
+```
+
+### Kde probíhá polymorfismus
+
+- `Game._draw_game()` volá `draw(screen)` nad různými objekty (`Obstacle`, `MovingPlatform`, `Coin`, `Enemy`, `Crossbow`, `HazardPool`, `Door`). Každá třída kreslí jinak, ale hra s nimi pracuje přes stejný název metody.
+- `Game.update()` volá `update()` nad nepřáteli, mincemi, hazardy, platformami, tlačítky a kušemi. Implementace se liší podle konkrétní třídy.
+- `LevelSelectButton.draw()` přepisuje `Button.draw()`, takže používá dědičnost i polymorfismus.
+- `MovingPlatform.draw()` přepisuje `Obstacle.draw()` a zároveň zůstává použitelná jako běžná překážka v kolizním seznamu `Level.obstacles`.
+
+## Git workflow pro jasný progres
+
+V tomto prostředí není příkaz `git` dostupný v PATH, ale jakmile je Git dostupný v terminálu, doporučené průběžné commity jsou:
+
+```powershell
+git add src main.py requirements.txt
+git commit -m "Reorganize game into src package"
+
+git add assets scripts
+git commit -m "Add executable build setup and icon"
+
+git add README.md docs
+git commit -m "Document OOP structure and project map"
+
+git add dist\FireWaterPuzzleAdventure.exe
+git commit -m "Build Windows executable"
+```
+
+Pokud škola nechce verzovat složku `dist`, poslední commit vynechte a odevzdejte `.exe` zvlášť.
+
+## Závislosti
+
+- Python 3.11 nebo novější
+- Pygame
+- PyInstaller pro sestavení `.exe`
