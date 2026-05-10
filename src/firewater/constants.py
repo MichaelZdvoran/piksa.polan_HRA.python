@@ -1,0 +1,49 @@
+﻿from enum import Enum
+
+# Screen settings
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 800
+FPS = 60
+LEVEL_TIME = 300  # 5 minutes in seconds
+
+# Colors
+COLOR_BG = (20, 20, 30)
+COLOR_WATER = (100, 180, 255)
+COLOR_FIRE = (255, 120, 60)
+COLOR_GROUND = (85, 130, 65)
+COLOR_WALL = (110, 110, 120)
+COLOR_TEXT = (240, 240, 245)
+COLOR_BUTTON = (110, 160, 255)
+COLOR_BUTTON_HOVER = (160, 210, 255)
+COLOR_SUCCESS = (120, 255, 120)
+COLOR_ERROR = (255, 120, 120)
+COLOR_LAVA = (255, 100, 0)
+COLOR_WATER_POOL = (60, 120, 210)
+COLOR_DOOR = (160, 110, 60)
+COLOR_DOOR_OPEN = (120, 220, 120)
+COLOR_BUTTON_INACTIVE = (100, 100, 110)
+COLOR_BUTTON_ACTIVE = (120, 255, 120)
+COLOR_PLATFORM_MOVING = (160, 160, 220)
+
+# Physics
+GRAVITY = 0.6
+PLAYER_SPEED = 5
+PLAYER_JUMP_POWER = 13
+PLAYER_WIDTH = 30
+PLAYER_HEIGHT = 40
+
+# Game mechanics
+COINS_REQUIRED_TO_UNLOCK = None  # Will be set per level, None = auto-detect
+
+# Enums
+class PlayerType(Enum):
+    WATER = 1
+    FIRE = 2
+
+class GameState(Enum):
+    MENU = 1
+    LEVEL_SELECT = 2
+    PLAYING = 3
+    LEVEL_COMPLETE = 4
+    GAME_OVER = 5
+
