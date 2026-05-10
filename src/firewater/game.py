@@ -44,8 +44,8 @@ class Game:
     def start_level(self, level_num: int):
         self.current_level = level_num
         self.level = Level(level_num, COLOR_WATER, COLOR_FIRE)
-        self.water_player = Player(100, SCREEN_HEIGHT - 150, PlayerType.WATER, COLOR_WATER)
-        self.fire_player = Player(SCREEN_WIDTH - 130, SCREEN_HEIGHT - 150, PlayerType.FIRE, COLOR_FIRE)
+        self.water_player = Player(*self.level.water_spawn, PlayerType.WATER, COLOR_WATER)
+        self.fire_player = Player(*self.level.fire_spawn, PlayerType.FIRE, COLOR_FIRE)
         self.state = GameState.PLAYING
         self.level_start_time = pygame.time.get_ticks()
     
