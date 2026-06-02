@@ -30,11 +30,12 @@ class Obstacle:
 class MovingPlatform(Obstacle):
     """Platform that moves back and forth"""
     def __init__(self, x: float, y: float, width: float, height: float, 
-                 move_distance: float = 100, speed: float = 0.5):
+                 move_distance: float = 100, speed: float = 0.5, color: tuple = None):
         super().__init__(x, y, width, height, "solid")
         self.start_x = x
         self.move_distance = move_distance
         self.speed = speed
+        self.color = color if color else COLOR_PLATFORM_MOVING
         self.direction = 1
         self.animation_time = 0
     
@@ -45,8 +46,9 @@ class MovingPlatform(Obstacle):
         self.rect.x = self.start_x + offset
     
     def draw(self, screen):
-        pygame.draw.rect(screen, COLOR_PLATFORM_MOVING, self.rect)
-        pygame.draw.rect(screen, (100, 100, 255), self.rect, 2)
+        pygame.draw.rect(screen, self.color, self.rect)
+        outline = tuple(max(0, channel - 55) for channel in self.color)
+        pygame.draw.rect(screen, outline, self.rect, 2)
         # Add animation indicator
         pygame.draw.circle(screen, (200, 200, 255), (self.rect.x + self.rect.width // 2, self.rect.y - 5), 3)
 
@@ -218,6 +220,9 @@ class Crossbow:
         self.projectiles = []
     
     def update(self):
+        surface = pygame.display.get_surface()
+        screen_width = surface.get_width() if surface else SCREEN_WIDTH
+
         self.shoot_timer += 1
         if self.shoot_timer > 120:  # Shoot every 2 seconds (120 frames at 60 FPS)
             self.projectiles.append(Projectile(self.x, self.y, self.direction))
@@ -225,7 +230,7 @@ class Crossbow:
         
         for projectile in self.projectiles[:]:
             projectile.update()
-            if projectile.x < -50 or projectile.x > SCREEN_WIDTH + 50:
+            if projectile.x < -50 or projectile.x > screen_width + 50:
                 self.projectiles.remove(projectile)
     
     def draw(self, screen):

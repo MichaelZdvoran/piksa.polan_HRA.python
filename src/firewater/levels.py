@@ -16,8 +16,17 @@ from .obstacles import (
 
 
 class Level:
-    def __init__(self, level_num: int, water_color: tuple, fire_color: tuple):
+    def __init__(
+        self,
+        level_num: int,
+        water_color: tuple,
+        fire_color: tuple,
+        screen_width: int = SCREEN_WIDTH,
+        screen_height: int = SCREEN_HEIGHT,
+    ):
         self.level_num = level_num
+        self.screen_width = screen_width
+        self.screen_height = screen_height
         self.obstacles = []
         self.coins = []
         self.enemies = []
@@ -30,8 +39,8 @@ class Level:
         self.time_limit = LEVEL_TIME
         self.water_color = water_color
         self.fire_color = fire_color
-        self.water_spawn = (80, SCREEN_HEIGHT - 90)
-        self.fire_spawn = (SCREEN_WIDTH - 110, SCREEN_HEIGHT - 90)
+        self.water_spawn = (80, self.screen_height - 90)
+        self.fire_spawn = (self.screen_width - 110, self.screen_height - 90)
         self._create_level()
 
     def _create_level(self):
@@ -46,8 +55,13 @@ class Level:
         else:
             self._level_5()
 
+    def _level_y(self, y: float):
+        if self.level_num >= 4:
+            return y + (self.screen_height - SCREEN_HEIGHT)
+        return y
+
     def _add_platform(self, x: float, y: float, width: float, height: float = 20):
-        platform = Obstacle(x, y, width, height)
+        platform = Obstacle(x, self._level_y(y), width, height)
         self.obstacles.append(platform)
         return platform
 
@@ -59,8 +73,9 @@ class Level:
         height: float = 20,
         move_distance: float = 90,
         speed: float = 0.8,
+        color: tuple = None,
     ):
-        platform = MovingPlatform(x, y, width, height, move_distance, speed)
+        platform = MovingPlatform(x, self._level_y(y), width, height, move_distance, speed, color)
         self.moving_platforms.append(platform)
         self.obstacles.append(platform)
         return platform
@@ -71,152 +86,149 @@ class Level:
         self.coins.append(Coin(coin_x, coin_y, coin_type))
 
     def _add_door_with_platform(self, x: float, y: float, player_type: PlayerType, color: tuple):
-        platform_x = max(0, min(SCREEN_WIDTH - 150, x - 55))
+        platform_x = max(0, min(self.screen_width - 150, x - 55))
         self._add_platform(platform_x, y + 60, 150, 20)
-        door = Door(x, y, player_type, color=color)
+        door = Door(x, self._level_y(y), player_type, color=color)
         if player_type == PlayerType.WATER:
             self.water_goal = door
         else:
             self.fire_goal = door
 
     def _add_default_spawns(self):
-        self.water_spawn = (80, SCREEN_HEIGHT - 90)
-        self.fire_spawn = (SCREEN_WIDTH - 110, SCREEN_HEIGHT - 90)
+        self.water_spawn = (80, self.screen_height - 90)
+        self.fire_spawn = (self.screen_width - 110, self.screen_height - 90)
 
     def _add_ground(self):
-        self._add_platform(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50)
+        self._add_platform(0, SCREEN_HEIGHT - 50, self.screen_width, 50)
 
     def _add_edge_crossbows(self, y: float):
-        self.crossbows.append(Crossbow(20, y, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 40, y, -1))
+        self.crossbows.append(Crossbow(20, self._level_y(y), 1))
+        self.crossbows.append(Crossbow(self.screen_width - 40, self._level_y(y), -1))
 
     def _level_1(self):
         self._add_default_spawns()
         self._add_ground()
 
-        self.hazard_pools.append(HazardPool(250, SCREEN_HEIGHT - 80, 185, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(690, SCREEN_HEIGHT - 80, 210, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(520, 600, 120, 24, "acid", (100, 255, 100)))
+        pink = (175, 70, 175)
 
-        lower_left = self._add_platform(80, 650, 160)
-        lower_mid = self._add_platform(455, 620, 145)
-        lower_right = self._add_platform(920, 640, 150)
-        step_a = self._add_platform(205, 540, 130)
-        step_b = self._add_platform(610, 525, 135)
-        step_c = self._add_platform(800, 475, 145)
-        step_d = self._add_platform(360, 435, 150)
-        upper_left_ramp = self._add_platform(255, 365, 120)
-        upper_mid = self._add_platform(555, 350, 165)
-        upper_left = self._add_platform(170, 300, 145)
-        upper_right = self._add_platform(845, 285, 150)
+        self.hazard_pools.append(HazardPool(160, self.screen_height - 80, 120, 30, "lava", self.fire_color))
+        self.hazard_pools.append(HazardPool(875, self.screen_height - 80, 135, 30, "water", self.water_color))
 
-        self._add_coin_on_platform(lower_left, 70, "water")
-        self._add_coin_on_platform(step_a, 50, "water")
-        self._add_coin_on_platform(step_d, 82, "water")
-        self._add_coin_on_platform(upper_left_ramp, 46, "water")
-        self._add_coin_on_platform(upper_mid, 38, "water")
-        self._add_coin_on_platform(lower_right, 60, "fire")
-        self._add_coin_on_platform(step_c, 70, "fire")
-        self._add_coin_on_platform(step_b, 92, "fire")
-        self._add_coin_on_platform(upper_mid, 118, "fire")
+        lower_left = self._add_moving_platform(220, 680, 130, move_distance=55, speed=0.55, color=pink)
+        lower_right = self._add_moving_platform(845, 660, 130, move_distance=55, speed=0.55, color=pink)
 
-        self.enemies.append(Enemy(382, 405, patrol_left=360, patrol_right=480))
-        self.enemies.append(FastEnemy(825, 445, patrol_left=800, patrol_right=915))
-        self.crossbows.append(Crossbow(20, 405, 1))
+        left_step = self._add_platform(330, 600, 110)
+        left_mid = self._add_platform(425, 530, 120)
+        center_low = self._add_platform(520, 455, 110)
+        center_high = self._add_platform(545, 385, 110)
+        right_mid = self._add_platform(625, 520, 110)
+        right_step = self._add_platform(745, 600, 115)
 
-        self._add_door_with_platform(210, 220, PlayerType.WATER, self.water_color)
-        self._add_door_with_platform(900, 205, PlayerType.FIRE, self.fire_color)
+        upper_left = self._add_moving_platform(285, 300, 125, move_distance=60, speed=0.5, color=pink)
+        upper_right = self._add_moving_platform(645, 300, 125, move_distance=60, speed=0.5, color=pink)
+
+        self._add_coin_on_platform(left_step, 45, "water")
+        self._add_coin_on_platform(left_mid, 55, "water")
+        self._add_coin_on_platform(center_high, 22, "water")
+        self._add_coin_on_platform(center_high, 75, "fire")
+        self._add_coin_on_platform(right_mid, 45, "fire")
+        self._add_coin_on_platform(right_step, 55, "fire")
+
+        self._add_door_with_platform(110, 185, PlayerType.WATER, self.water_color)
+        self._add_door_with_platform(870, 175, PlayerType.FIRE, self.fire_color)
         self.time_limit = 320
 
     def _level_2(self):
-        self._add_default_spawns()
+        self.water_spawn = (520, self.screen_height - 90)
+        self.fire_spawn = (640, self.screen_height - 90)
         self._add_ground()
 
-        self.hazard_pools.append(HazardPool(180, SCREEN_HEIGHT - 80, 210, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(520, SCREEN_HEIGHT - 80, 150, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(850, SCREEN_HEIGHT - 80, 170, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(330, 505, 130, 25, "water", self.water_color))
+        pink = (175, 70, 175)
 
-        p1 = self._add_platform(80, 630, 145)
-        p2 = self._add_moving_platform(285, 575, 125, move_distance=65, speed=0.65)
-        p3 = self._add_platform(480, 505, 145)
-        p4 = self._add_platform(720, 575, 135)
-        p5 = self._add_moving_platform(905, 520, 130, move_distance=85, speed=0.75)
-        p6 = self._add_platform(755, 420, 150)
-        p7 = self._add_moving_platform(560, 385, 130, move_distance=75, speed=0.65)
-        p8 = self._add_platform(350, 335, 145)
-        p9 = self._add_platform(145, 250, 145)
-        p9b = self._add_platform(705, 335, 130)
-        p10 = self._add_platform(735, 250, 155)
+        self.hazard_pools.append(HazardPool(300, self.screen_height - 80, 120, 30, "lava", self.fire_color))
+        self.hazard_pools.append(HazardPool(750, self.screen_height - 80, 140, 30, "water", self.water_color))
 
-        self._add_coin_on_platform(p1, 60, "water")
-        self._add_coin_on_platform(p3, 38, "water")
-        self._add_coin_on_platform(p8, 90, "water")
-        self._add_coin_on_platform(p9, 55, "water")
-        self._add_coin_on_platform(p4, 55, "fire")
-        self._add_coin_on_platform(p5, 55, "fire")
-        self._add_coin_on_platform(p6, 100, "fire")
-        self._add_coin_on_platform(p9b, 52, "fire")
-        self._add_coin_on_platform(p10, 70, "fire")
+        lower_left = self._add_moving_platform(225, 675, 130, move_distance=55, speed=0.55, color=pink)
+        lower_right = self._add_moving_platform(845, 675, 130, move_distance=55, speed=0.55, color=pink)
 
-        self.enemies.append(HeavyEnemy(505, 471, patrol_left=485, patrol_right=590))
-        self.enemies.append(VerticalEnemy(685, 325, patrol_top=285, patrol_bottom=390))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 40, 345, -1))
+        left_low = self._add_platform(90, 600, 110)
+        left_mid = self._add_platform(245, 515, 115)
+        left_high = self._add_platform(385, 445, 90)
+        center = self._add_platform(530, 365, 110)
+        right_high = self._add_platform(680, 445, 95)
+        right_mid = self._add_platform(845, 515, 95)
+        right_low = self._add_platform(1010, 600, 110)
 
-        self._add_door_with_platform(185, 170, PlayerType.WATER, self.water_color)
-        self._add_door_with_platform(790, 170, PlayerType.FIRE, self.fire_color)
+        upper_left = self._add_moving_platform(50, 330, 125, move_distance=45, speed=0.45, color=pink)
+        upper_right = self._add_moving_platform(980, 330, 125, move_distance=45, speed=0.45, color=pink)
+        top_left = self._add_platform(210, 235, 165)
+        top_right = self._add_platform(845, 235, 165)
+
+        self._add_coin_on_platform(left_low, 55, "water")
+        self._add_coin_on_platform(left_mid, 45, "water")
+        self._add_coin_on_platform(left_high, 34, "water")
+        self._add_coin_on_platform(top_left, 78, "water")
+        self._add_coin_on_platform(center, 25, "water")
+        self._add_coin_on_platform(center, 75, "fire")
+        self._add_coin_on_platform(right_high, 42, "fire")
+        self._add_coin_on_platform(right_mid, 43, "fire")
+        self._add_coin_on_platform(right_low, 50, "fire")
+        self._add_coin_on_platform(top_right, 82, "fire")
+
+        self._add_door_with_platform(465, 150, PlayerType.WATER, self.water_color)
+        self._add_door_with_platform(615, 140, PlayerType.FIRE, self.fire_color)
         self.time_limit = 350
 
     def _level_3(self):
-        self._add_default_spawns()
+        self.water_spawn = (535, self.screen_height - 90)
+        self.fire_spawn = (665, self.screen_height - 90)
         self._add_ground()
 
-        self.hazard_pools.append(HazardPool(260, SCREEN_HEIGHT - 80, 170, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(615, SCREEN_HEIGHT - 80, 160, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(905, SCREEN_HEIGHT - 80, 170, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(515, 565, 170, 25, "acid", (100, 255, 100)))
-        self.hazard_pools.append(HazardPool(775, 370, 125, 25, "lava", self.fire_color))
+        pink = (175, 70, 175)
 
-        p1 = self._add_platform(65, 635, 135)
-        p2 = self._add_platform(440, 630, 135)
-        p3 = self._add_moving_platform(720, 590, 120, move_distance=70, speed=0.8)
-        p4 = self._add_platform(960, 535, 130)
-        p5 = self._add_moving_platform(180, 520, 120, move_distance=70, speed=0.7)
-        p6 = self._add_platform(375, 455, 135)
-        p7 = self._add_platform(590, 440, 135)
-        p8 = self._add_moving_platform(835, 315, 120, move_distance=70, speed=0.75)
-        p9 = self._add_platform(625, 270, 135)
-        p10 = self._add_platform(390, 260, 135)
-        p11 = self._add_platform(135, 325, 140)
+        lower_left = self._add_platform(175, 675, 105)
+        lower_mid_left = self._add_platform(350, 625, 105)
+        lower_right = self._add_platform(820, 625, 120)
+        right_low = self._add_platform(925, 545, 105)
+        right_mid = self._add_platform(805, 460, 125)
+        left_low = self._add_platform(175, 535, 105)
+        left_mid = self._add_platform(270, 445, 85)
+        middle = self._add_platform(390, 360, 165)
+        right_high = self._add_platform(795, 275, 160)
 
-        self._add_coin_on_platform(p1, 55, "water")
-        self._add_coin_on_platform(p5, 50, "water")
-        self._add_coin_on_platform(p6, 88, "water")
-        self._add_coin_on_platform(p10, 58, "water")
-        self._add_coin_on_platform(p2, 60, "fire")
-        self._add_coin_on_platform(p3, 52, "fire")
-        self._add_coin_on_platform(p7, 72, "fire")
-        self._add_coin_on_platform(p9, 55, "fire")
+        left_lower_move = self._add_moving_platform(55, 455, 130, move_distance=45, speed=0.5, color=pink)
+        left_upper_move = self._add_moving_platform(235, 285, 130, move_distance=55, speed=0.5, color=pink)
+        right_mid_move = self._add_moving_platform(960, 355, 125, move_distance=50, speed=0.55, color=pink)
+        right_lower_move = self._add_moving_platform(1060, 630, 125, move_distance=45, speed=0.5, color=pink)
 
-        self.enemies.append(JumperEnemy(395, 425, patrol_left=375, patrol_right=480))
-        self.enemies.append(ZigZagEnemy(960, 505, patrol_left=960, patrol_right=1060))
-        self.enemies.append(VerticalEnemy(560, 340, patrol_top=285, patrol_bottom=410))
-        self.crossbows.append(Crossbow(20, 250, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 40, 430, -1))
+        self._add_coin_on_platform(lower_left, 45, "water")
+        self._add_coin_on_platform(lower_mid_left, 50, "water")
+        self._add_coin_on_platform(left_low, 45, "water")
+        self._add_coin_on_platform(left_mid, 35, "water")
+        self._add_coin_on_platform(middle, 75, "water")
+        self._add_coin_on_platform(lower_right, 55, "fire")
+        self._add_coin_on_platform(right_low, 45, "fire")
+        self._add_coin_on_platform(right_mid, 62, "fire")
+        self._add_coin_on_platform(right_high, 70, "fire")
 
-        self._add_door_with_platform(175, 245, PlayerType.WATER, self.water_color)
-        self._add_door_with_platform(665, 190, PlayerType.FIRE, self.fire_color)
+        self.enemies.append(VerticalEnemy(465, 230, patrol_top=205, patrol_bottom=250))
+        self.enemies.append(JumperEnemy(1075, 300, patrol_left=1060, patrol_right=1115))
+        self.crossbows.append(Crossbow(0, 250, 1))
+        self.crossbows.append(Crossbow(self.screen_width - 20, 420, -1))
+
+        self._add_door_with_platform(105, 190, PlayerType.WATER, self.water_color)
+        self._add_door_with_platform(650, 185, PlayerType.FIRE, self.fire_color)
         self.time_limit = 380
 
     def _level_4(self):
         self._add_default_spawns()
         self._add_ground()
 
-        self.hazard_pools.append(HazardPool(165, SCREEN_HEIGHT - 80, 185, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(420, SCREEN_HEIGHT - 80, 155, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(765, SCREEN_HEIGHT - 80, 220, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(455, 505, 190, 25, "acid", (100, 255, 100)))
-        self.hazard_pools.append(HazardPool(780, 455, 130, 25, "lava", self.fire_color))
+        self.hazard_pools.append(HazardPool(165, self.screen_height - 80, 185, 30, "lava", self.fire_color))
+        self.hazard_pools.append(HazardPool(420, self.screen_height - 80, 155, 30, "water", self.water_color))
+        self.hazard_pools.append(HazardPool(765, self.screen_height - 80, 220, 30, "water", self.water_color))
+        self.hazard_pools.append(HazardPool(455, self._level_y(505), 190, 25, "acid", (100, 255, 100)))
+        self.hazard_pools.append(HazardPool(780, self._level_y(455), 130, 25, "lava", self.fire_color))
 
         p1 = self._add_platform(70, 650, 130)
         p2 = self._add_moving_platform(260, 590, 120, move_distance=80, speed=0.85)
@@ -241,11 +253,11 @@ class Level:
         self._add_coin_on_platform(p7, 72, "fire")
         self._add_coin_on_platform(p12, 82, "fire")
 
-        self.enemies.append(FastEnemy(725, 510, patrol_left=690, patrol_right=790))
-        self.enemies.append(HeavyEnemy(550, 351, patrol_left=530, patrol_right=630))
-        self.enemies.append(JumperEnemy(345, 380, patrol_left=305, patrol_right=410))
-        self.crossbows.append(Crossbow(20, 285, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 40, 360, -1))
+        self.enemies.append(FastEnemy(725, self._level_y(510), patrol_left=690, patrol_right=790))
+        self.enemies.append(HeavyEnemy(550, self._level_y(351), patrol_left=530, patrol_right=630))
+        self.enemies.append(JumperEnemy(345, self._level_y(380), patrol_left=305, patrol_right=410))
+        self.crossbows.append(Crossbow(20, self._level_y(285), 1))
+        self.crossbows.append(Crossbow(self.screen_width - 40, self._level_y(360), -1))
 
         self._add_door_with_platform(145, 260, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(885, 150, PlayerType.FIRE, self.fire_color)
@@ -255,12 +267,12 @@ class Level:
         self._add_default_spawns()
         self._add_ground()
 
-        self.hazard_pools.append(HazardPool(155, SCREEN_HEIGHT - 80, 180, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(420, SCREEN_HEIGHT - 80, 150, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(675, SCREEN_HEIGHT - 80, 155, 30, "water", self.water_color))
-        self.hazard_pools.append(HazardPool(930, SCREEN_HEIGHT - 80, 165, 30, "lava", self.fire_color))
-        self.hazard_pools.append(HazardPool(490, 515, 155, 25, "acid", (100, 255, 100)))
-        self.hazard_pools.append(HazardPool(735, 335, 150, 25, "water", self.water_color))
+        self.hazard_pools.append(HazardPool(155, self.screen_height - 80, 180, 30, "water", self.water_color))
+        self.hazard_pools.append(HazardPool(420, self.screen_height - 80, 150, 30, "lava", self.fire_color))
+        self.hazard_pools.append(HazardPool(675, self.screen_height - 80, 155, 30, "water", self.water_color))
+        self.hazard_pools.append(HazardPool(930, self.screen_height - 80, 165, 30, "lava", self.fire_color))
+        self.hazard_pools.append(HazardPool(490, self._level_y(515), 155, 25, "acid", (100, 255, 100)))
+        self.hazard_pools.append(HazardPool(735, self._level_y(335), 150, 25, "water", self.water_color))
 
         p1 = self._add_platform(70, 650, 125)
         p2 = self._add_platform(345, 625, 120)
@@ -289,13 +301,13 @@ class Level:
         self._add_coin_on_platform(p11, 74, "fire")
         self._add_coin_on_platform(p13, 52, "fire")
 
-        self.enemies.append(JumperEnemy(350, 425, patrol_left=335, patrol_right=425))
-        self.enemies.append(ZigZagEnemy(790, 430, patrol_left=770, patrol_right=860))
-        self.enemies.append(FastEnemy(1020, 480, patrol_left=1000, patrol_right=1090))
-        self.enemies.append(VerticalEnemy(705, 170, patrol_top=130, patrol_bottom=245))
-        self.crossbows.append(Crossbow(20, 240, 1))
-        self.crossbows.append(Crossbow(SCREEN_WIDTH - 40, 295, -1))
-        self.crossbows.append(Crossbow(20, 520, 1))
+        self.enemies.append(JumperEnemy(350, self._level_y(425), patrol_left=335, patrol_right=425))
+        self.enemies.append(ZigZagEnemy(790, self._level_y(430), patrol_left=770, patrol_right=860))
+        self.enemies.append(FastEnemy(1020, self._level_y(480), patrol_left=1000, patrol_right=1090))
+        self.enemies.append(VerticalEnemy(705, self._level_y(170), patrol_top=self._level_y(130), patrol_bottom=self._level_y(245)))
+        self.crossbows.append(Crossbow(20, self._level_y(240), 1))
+        self.crossbows.append(Crossbow(self.screen_width - 40, self._level_y(295), -1))
+        self.crossbows.append(Crossbow(20, self._level_y(520), 1))
 
         self._add_door_with_platform(210, 125, PlayerType.WATER, self.water_color)
         self._add_door_with_platform(555, 55, PlayerType.FIRE, self.fire_color)

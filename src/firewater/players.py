@@ -107,13 +107,16 @@ class Player:
         for button in buttons:
             button.check_collision(self.rect, self.player_type)
         
+        surface = pygame.display.get_surface()
+        screen_width, screen_height = surface.get_size() if surface else (SCREEN_WIDTH, SCREEN_HEIGHT)
+
         # Boundaries
         if self.pos.x < 0:
             self.pos.x = 0
-        if self.pos.x + self.width > SCREEN_WIDTH:
-            self.pos.x = SCREEN_WIDTH - self.width
+        if self.pos.x + self.width > screen_width:
+            self.pos.x = screen_width - self.width
         
-        if self.pos.y > SCREEN_HEIGHT:
+        if self.pos.y > screen_height:
             return False
         
         return True

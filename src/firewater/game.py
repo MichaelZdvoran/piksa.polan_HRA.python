@@ -2,7 +2,8 @@
 import sys
 import math
 from .constants import (SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COLOR_BG, 
-                       GameState, PlayerType, LEVEL_TIME, COLOR_WATER, COLOR_FIRE)
+                       GameState, PlayerType, LEVEL_TIME, COLOR_WATER, COLOR_FIRE,
+                       LARGE_LEVEL_SCREEN_WIDTH, LARGE_LEVEL_SCREEN_HEIGHT)
 from .players import Player
 from .levels import Level
 from .ui import Button, LevelSelectButton, HUD
@@ -11,7 +12,11 @@ pygame.init()
 
 class Game:
     def __init__(self):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.logical_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.window_size = self.logical_size
+        self.display_flags = pygame.RESIZABLE
+        self.window = pygame.display.set_mode(self.window_size, self.display_flags)
+        self.screen = pygame.Surface(self.logical_size)
         pygame.display.set_caption("Fire & Water: Puzzle Adventure")
         self.clock = pygame.time.Clock()
         self.hud = HUD()
@@ -30,7 +35,8 @@ class Game:
         self.resume_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 80, 200, 60, "RESUME")
         self.pause_settings_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2, 200, 60, "SETTINGS")
         self.timer_toggle_button = Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 - 30, 260, 60, "TIMER: ON")
-        self.settings_back_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 70, 200, 60, "BACK")
+        self.fullscreen_toggle_button = Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 + 40, 260, 60, "FULLSCREEN: OFF")
+        self.settings_back_button = Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 110, 200, 60, "BACK")
         
         # Level select buttons
         self.level_buttons = []
@@ -53,11 +59,76 @@ class Game:
         self.level_start_time = 0
         self.pause_started_at = 0
         self.timer_enabled = True
+        self.fullscreen_enabled = False
         self.settings_return_state = GameState.MENU
+
+        self._layout_buttons()
+
+    def _level_screen_size(self, level_num: int):
+        if level_num >= 4:
+            return (LARGE_LEVEL_SCREEN_WIDTH, LARGE_LEVEL_SCREEN_HEIGHT)
+        return (SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    def _set_screen_size(self, size):
+        flags = pygame.FULLSCREEN if self.fullscreen_enabled else pygame.RESIZABLE
+        if self.logical_size != size:
+            self.logical_size = size
+            self.screen = pygame.Surface(self.logical_size)
+            if not self.fullscreen_enabled:
+                self.window_size = size
+        if self.fullscreen_enabled:
+            self.window = pygame.display.set_mode(size, flags)
+            self.window_size = self.window.get_size()
+        elif self.display_flags != flags:
+            self.window = pygame.display.set_mode(self.window_size, flags)
+        self.display_flags = flags
+        if self.screen.get_size() != size:
+            self.screen = pygame.Surface(size)
+        if self.window.get_size() != self.window_size:
+            self.window_size = self.window.get_size()
+        self._layout_buttons()
+
+    def _handle_window_resize(self, size):
+        if self.fullscreen_enabled:
+            return
+        min_width, min_height = 800, 530
+        self.window_size = (max(min_width, size[0]), max(min_height, size[1]))
+        self.window = pygame.display.set_mode(self.window_size, pygame.RESIZABLE)
+        self._layout_buttons()
+
+    def _to_game_pos(self, pos):
+        window_width, window_height = self.window_size
+        game_width, game_height = self.logical_size
+        return (
+            int(pos[0] * game_width / window_width),
+            int(pos[1] * game_height / window_height),
+        )
+            self._layout_buttons()
+
+    def _layout_buttons(self):
+        width, height = self.screen.get_size()
+
+        self.start_button.rect.topleft = (width // 2 - 100, height // 2)
+        self.level_select_button.rect.topleft = (width // 2 - 100, height // 2 + 100)
+        self.settings_button.rect.topleft = (width // 2 - 100, height // 2 + 200)
+
+        self.retry_button.rect.topleft = (width // 2 - 220, height // 2 + 100)
+        self.menu_button.rect.topleft = (width // 2 + 20, height // 2 + 100)
+        self.resume_button.rect.topleft = (width // 2 - 100, height // 2 - 80)
+        self.pause_settings_button.rect.topleft = (width // 2 - 100, height // 2)
+        self.timer_toggle_button.rect.topleft = (width // 2 - 130, height // 2 - 30)
+        self.fullscreen_toggle_button.rect.topleft = (width // 2 - 130, height // 2 + 40)
+        self.settings_back_button.rect.topleft = (width // 2 - 100, height // 2 + 110)
+
+        for i, button in enumerate(self.level_buttons, start=1):
+            button.rect.topleft = (width // 2 - 200 + (i - 1) * 100, height // 2)
+
+        self.back_button.rect.topleft = (50, 50)
     
     def start_level(self, level_num: int):
         self.current_level = level_num
-        self.level = Level(level_num, COLOR_WATER, COLOR_FIRE)
+        self._set_screen_size(self._level_screen_size(level_num))
+        self.level = Level(level_num, COLOR_WATER, COLOR_FIRE, *self.screen.get_size())
         self.water_player = Player(*self.level.water_spawn, PlayerType.WATER, COLOR_WATER)
         self.fire_player = Player(*self.level.fire_spawn, PlayerType.FIRE, COLOR_FIRE)
         self.state = GameState.PLAYING
@@ -86,73 +157,97 @@ class Game:
     def toggle_timer(self):
         self.timer_enabled = not self.timer_enabled
         self.timer_toggle_button.text = "TIMER: ON" if self.timer_enabled else "TIMER: OFF"
+
+    def toggle_fullscreen(self):
+        self.fullscreen_enabled = not self.fullscreen_enabled
+        self.fullscreen_toggle_button.text = "FULLSCREEN: ON" if self.fullscreen_enabled else "FULLSCREEN: OFF"
+        if self.state in (GameState.PLAYING, GameState.PAUSED):
+            target_size = self._level_screen_size(self.current_level)
+        else:
+            target_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
+        if not self.fullscreen_enabled:
+            self.window_size = target_size
+        self._set_screen_size(target_size)
     
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+
+            if event.type == pygame.VIDEORESIZE:
+                self._handle_window_resize(event.size)
             
             if event.type == pygame.MOUSEMOTION:
-                self.start_button.check_hover(event.pos)
-                self.level_select_button.check_hover(event.pos)
-                self.settings_button.check_hover(event.pos)
-                self.retry_button.check_hover(event.pos)
-                self.menu_button.check_hover(event.pos)
-                self.resume_button.check_hover(event.pos)
-                self.pause_settings_button.check_hover(event.pos)
-                self.timer_toggle_button.check_hover(event.pos)
-                self.settings_back_button.check_hover(event.pos)
-                self.back_button.check_hover(event.pos)
+                mouse_pos = self._to_game_pos(event.pos)
+                self.start_button.check_hover(mouse_pos)
+                self.level_select_button.check_hover(mouse_pos)
+                self.settings_button.check_hover(mouse_pos)
+                self.retry_button.check_hover(mouse_pos)
+                self.menu_button.check_hover(mouse_pos)
+                self.resume_button.check_hover(mouse_pos)
+                self.pause_settings_button.check_hover(mouse_pos)
+                self.timer_toggle_button.check_hover(mouse_pos)
+                self.fullscreen_toggle_button.check_hover(mouse_pos)
+                self.settings_back_button.check_hover(mouse_pos)
+                self.back_button.check_hover(mouse_pos)
                 for btn in self.level_buttons:
-                    btn.check_hover(event.pos)
+                    btn.check_hover(mouse_pos)
             
             if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = self._to_game_pos(event.pos)
                 if self.state == GameState.MENU:
-                    if self.start_button.is_clicked(event.pos):
+                    if self.start_button.is_clicked(mouse_pos):
                         self.start_level(1)
-                    elif self.level_select_button.is_clicked(event.pos):
+                    elif self.level_select_button.is_clicked(mouse_pos):
                         self.state = GameState.LEVEL_SELECT
-                    elif self.settings_button.is_clicked(event.pos):
+                    elif self.settings_button.is_clicked(mouse_pos):
                         self.open_settings(GameState.MENU)
                 
                 elif self.state == GameState.LEVEL_SELECT:
-                    if self.back_button.is_clicked(event.pos):
+                    if self.back_button.is_clicked(mouse_pos):
+                        self._set_screen_size((SCREEN_WIDTH, SCREEN_HEIGHT))
                         self.state = GameState.MENU
                     for btn in self.level_buttons:
-                        if btn.is_clicked(event.pos) and btn.unlocked:
+                        if btn.is_clicked(mouse_pos) and btn.unlocked:
                             self.start_level(btn.level_num)
                 
                 elif self.state == GameState.GAME_OVER:
-                    if self.retry_button.is_clicked(event.pos):
+                    if self.retry_button.is_clicked(mouse_pos):
                         self.start_level(self.current_level)
-                    elif self.menu_button.is_clicked(event.pos):
+                    elif self.menu_button.is_clicked(mouse_pos):
+                        self._set_screen_size((SCREEN_WIDTH, SCREEN_HEIGHT))
                         self.state = GameState.MENU
 
                 elif self.state == GameState.PAUSED:
-                    if self.resume_button.is_clicked(event.pos):
+                    if self.resume_button.is_clicked(mouse_pos):
                         self.resume_game()
-                    elif self.pause_settings_button.is_clicked(event.pos):
+                    elif self.pause_settings_button.is_clicked(mouse_pos):
                         self.open_settings(GameState.PAUSED)
-                    elif self.retry_button.is_clicked(event.pos):
+                    elif self.retry_button.is_clicked(mouse_pos):
                         self.start_level(self.current_level)
-                    elif self.menu_button.is_clicked(event.pos):
+                    elif self.menu_button.is_clicked(mouse_pos):
+                        self._set_screen_size((SCREEN_WIDTH, SCREEN_HEIGHT))
                         self.state = GameState.MENU
 
                 elif self.state == GameState.SETTINGS:
-                    if self.timer_toggle_button.is_clicked(event.pos):
+                    if self.timer_toggle_button.is_clicked(mouse_pos):
                         self.toggle_timer()
-                    elif self.settings_back_button.is_clicked(event.pos):
+                    elif self.fullscreen_toggle_button.is_clicked(mouse_pos):
+                        self.toggle_fullscreen()
+                    elif self.settings_back_button.is_clicked(mouse_pos):
                         self.close_settings()
                 
                 elif self.state == GameState.LEVEL_COMPLETE:
                     if self.current_level < self.max_level:
                         self.start_level(self.current_level + 1)
                     else:
+                        self._set_screen_size((SCREEN_WIDTH, SCREEN_HEIGHT))
                         self.state = GameState.MENU
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     if self.state == GameState.LEVEL_SELECT:
+                        self._set_screen_size((SCREEN_WIDTH, SCREEN_HEIGHT))
                         self.state = GameState.MENU
                     elif self.state == GameState.PLAYING:
                         self.pause_game()
@@ -238,6 +333,7 @@ class Game:
             self.resume_button.update()
             self.pause_settings_button.update()
             self.timer_toggle_button.update()
+            self.fullscreen_toggle_button.update()
             self.settings_back_button.update()
             for btn in self.level_buttons:
                 btn.update()
@@ -261,18 +357,25 @@ class Game:
         elif self.state == GameState.GAME_OVER:
             self._draw_game_over()
         
+        if self.window_size != self.logical_size:
+            scaled_screen = pygame.transform.smoothscale(self.screen, self.window_size)
+            self.window.blit(scaled_screen, (0, 0))
+        else:
+            self.window.blit(self.screen, (0, 0))
         pygame.display.flip()
     
     def _draw_background(self):
         """Draw an animated background with gradient effect"""
-        for y in range(SCREEN_HEIGHT):
-            ratio = y / SCREEN_HEIGHT
+        width, height = self.screen.get_size()
+        for y in range(height):
+            ratio = y / height
             r = int(20 + ratio * 10)
             g = int(20 + ratio * 5)
             b = int(30 + ratio * 15)
-            pygame.draw.line(self.screen, (r, g, b), (0, y), (SCREEN_WIDTH, y))
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (width, y))
     
     def _draw_menu(self):
+        width, height = self.screen.get_size()
         self.hud.draw_menu(self.screen)
         self.start_button.draw(self.screen)
         self.level_select_button.draw(self.screen)
@@ -288,7 +391,7 @@ class Game:
         self.menu_water_player.animation_time += 0.12
         self.menu_water_player.draw(self.screen)
 
-        self.menu_fire_player.pos.x = SCREEN_WIDTH - 174 + math.sin(menu_time * 2.0 + 1.2) * 18
+        self.menu_fire_player.pos.x = width - 174 + math.sin(menu_time * 2.0 + 1.2) * 18
         self.menu_fire_player.pos.y = 505 - max(0, math.sin(menu_time * 2.3 + 0.8)) * 38
         self.menu_fire_player.vel.x = math.cos(menu_time * 2.0 + 1.2) * 5
         self.menu_fire_player.vel.y = -math.cos(menu_time * 2.3 + 0.8) * 8
@@ -298,7 +401,7 @@ class Game:
         self.menu_fire_player.draw(self.screen)
 
         pygame.draw.line(self.screen, (70, 160, 230), (70, 585), (280, 585), 5)
-        pygame.draw.line(self.screen, (245, 95, 45), (SCREEN_WIDTH - 280, 585), (SCREEN_WIDTH - 70, 585), 5)
+        pygame.draw.line(self.screen, (245, 95, 45), (width - 280, 585), (width - 70, 585), 5)
 
         # Instructions above players
         font_small = pygame.font.Font(None, 24)
@@ -306,7 +409,7 @@ class Game:
         fire_controls = font_small.render("WASD", True, (255, 150, 80))
         
         self.screen.blit(water_controls, (95, 455))
-        self.screen.blit(fire_controls, (SCREEN_WIDTH - 178, 455))
+        self.screen.blit(fire_controls, (width - 178, 455))
     
     def _draw_level_select(self):
         self.hud.draw_level_select(self.screen)
@@ -367,6 +470,7 @@ class Game:
     def _draw_settings(self):
         self.hud.draw_settings(self.screen, self.timer_enabled, self.settings_return_state == GameState.PAUSED)
         self.timer_toggle_button.draw(self.screen)
+        self.fullscreen_toggle_button.draw(self.screen)
         self.settings_back_button.draw(self.screen)
     
     def _draw_level_complete(self):
