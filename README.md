@@ -8,9 +8,10 @@ Kooperativní 2D plošinovka pro dva hráče vytvořená v Pythonu a Pygame. Hr�
 - Kód je objektově orientovaný a rozdělený do logických složek (`src/firewater`, `assets`, `docs`, `scripts`).
 - Hra má připravený build do `.exe` pomocí PyInstalleru a používá vlastní ikonu `assets/icon.ico`.
 - Mapa struktury projektu, dědičnosti a polymorfismu je níže a samostatně v `docs/project_map.md`.
-- Hra obsahuje 5 komplexnějších levelů, z toho levely 4 a 5 používají více pohyblivých plošin, hazardů, kuší a kombinované cesty.
+- Hra obsahuje 5 komplexnějších levelů, z toho levely 4 a 5 používají větší herní plochu, více pohyblivých plošin, hazardů, kuší a kombinované cesty.
 - Ve hře je 6 druhů nepřátel: `Enemy`, `FastEnemy`, `HeavyEnemy`, `VerticalEnemy`, `JumperEnemy`, `ZigZagEnemy`.
-- Herní menu obsahuje nastavení a hra jde v průběhu pauznout.
+- Herní menu obsahuje nastavení, fullscreen režim a hra jde v průběhu pauznout.
+- Okno hry jde měnit myší; hra se škáluje podle velikosti okna bez změny fyziky levelů.
 - Hlavní menu má animované pozadí v tématu oheň/voda a ukázkové animované postavy.
 - Hráči mají vlastní animovaný vzhled: Voda používá kapkový tvar, vlny a kapky; Oheň používá plamenný tvar, jiskry a běhové/skokové animace.
 - Repozitář je připravený na průběžné commity; příkazy jsou v části Git workflow.
@@ -40,15 +41,17 @@ python src\main.py
 - Nepřátelé s různým pohybem: základní patrola, rychlá patrola, těžký pomalý nepřítel, vertikální pohyb, skákání a zig-zag pohyb.
 - Stavy hry: hlavní menu, výběr levelu, hraní, pauza, nastavení, dokončení levelu a game over.
 - Časový limit lze v nastavení vypnout.
+- Fullscreen lze zapnout nebo vypnout v nastavení.
+- Levely 1-3 používají základní herní plochu 1200x800, levely 4-5 větší plochu 1500x900.
 
 ### Přehled levelů
 
 ```text
-Level 1: 14 dosažitelných platforem, 9 mincí, 3 hazardy, 2 nepřátelé, 1 kuše
-Level 2: 14 dosažitelných platforem, 9 mincí, 4 hazardy, 2 nepřátelé, 1 kuše
-Level 3: 14 dosažitelných platforem, 8 mincí, 5 hazardů, 3 nepřátelé, 2 kuše
-Level 4: 16 dosažitelných platforem, 8 mincí, 5 hazardů, 3 nepřátelé, 2 kuše
-Level 5: 18 dosažitelných platforem, 10 mincí, 6 hazardů, 4 nepřátelé, 3 kuše
+Level 1: 13 platforem, 6 mincí, 2 hazardy, 0 nepřátel, 0 kuší
+Level 2: 16 platforem, 10 mincí, 2 hazardy, 0 nepřátel, 0 kuší
+Level 3: 16 platforem, 9 mincí, 0 hazardů, 2 nepřátelé, 2 kuše
+Level 4: 17 platforem, 10 mincí, 3 hazardy, 4 nepřátelé, 4 kuše
+Level 5: 18 platforem, 10 mincí, 6 hazardů, 4 nepřátelé, 3 kuše
 ```
 
 ## Nastavení
@@ -56,6 +59,8 @@ Level 5: 18 dosažitelných platforem, 10 mincí, 6 hazardů, 4 nepřátelé, 3 
 V hlavním menu je tlačítko `SETTINGS`. Stejné nastavení je dostupné i z pauzy během rozehraného levelu.
 
 - `TIMER: ON/OFF`: zapíná nebo vypíná časový limit levelu.
+- `FULLSCREEN: ON/OFF`: přepíná hru mezi oknem a fullscreen režimem.
+- Okno v režimu bez fullscreen lze ručně zmenšovat a zvětšovat tažením za okraj.
 
 ## Build do .exe
 
@@ -104,7 +109,7 @@ Build používá `assets/icon.ico`. Pokud se mění název aplikace nebo ikona, 
 
 ```text
 Game
-├── vlastní pygame okno, hlavní smyčka, stavy hry
+├── vlastní pygame okno, resizable/fullscreen režim, hlavní smyčka, stavy hry
 ├── používá Level, Player, HUD, Button, LevelSelectButton
 ├── spravuje animované ukázkové postavy v menu
 └── volá polymorfně update()/draw() nad objekty levelu

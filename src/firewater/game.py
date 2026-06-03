@@ -79,7 +79,7 @@ class Game:
         if self.fullscreen_enabled:
             self.window = pygame.display.set_mode(size, flags)
             self.window_size = self.window.get_size()
-        elif self.display_flags != flags:
+        elif self.display_flags != flags or self.window.get_size() != self.window_size:
             self.window = pygame.display.set_mode(self.window_size, flags)
         self.display_flags = flags
         if self.screen.get_size() != size:
@@ -103,7 +103,6 @@ class Game:
             int(pos[0] * game_width / window_width),
             int(pos[1] * game_height / window_height),
         )
-            self._layout_buttons()
 
     def _layout_buttons(self):
         width, height = self.screen.get_size()

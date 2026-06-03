@@ -14,8 +14,8 @@ src/main.py
 ## Soubory
 
 - `src/main.py`: jednoduchý vstupní bod, spustí `Game().run()`.
-- `src/firewater/constants.py`: rozměry okna, FPS, fyzika, barvy a enumy `PlayerType` a `GameState`.
-- `src/firewater/game.py`: hlavní pygame okno, herní smyčka, přepínání stavů, input, aktualizace a vykreslení.
+- `src/firewater/constants.py`: základní a velké rozměry herní plochy, FPS, fyzika, barvy a enumy `PlayerType` a `GameState`.
+- `src/firewater/game.py`: hlavní pygame okno, resizable/fullscreen režim, škálování vykreslení, herní smyčka, přepínání stavů, input, aktualizace a vykreslení.
 - `src/firewater/levels.py`: definice 5 asymetrických levelů a pomocné metody pro platformy, mince, dveře a kuše.
 - `src/firewater/players.py`: logika hráčů, fyzika, kolize, sběr mincí a animované vykreslení Vody/Ohně.
 - `src/firewater/obstacles.py`: platformy, mince, nepřátelé, kuše, projektily, hazardy a dveře.
@@ -45,8 +45,8 @@ Enemy
 
 ## Účel tříd
 
-- `Game`: řídí hlavní smyčku, menu, nastavení, pauzu, výběr levelů, průběh hry, konec levelu a game over.
-- `Level`: vytváří 5 asymetrických levelů a drží kolekce herních objektů.
+- `Game`: řídí hlavní smyčku, menu, nastavení, fullscreen, změnu velikosti okna, pauzu, výběr levelů, průběh hry, konec levelu a game over.
+- `Level`: vytváří 5 asymetrických levelů, používá základní nebo větší herní plochu podle levelu a drží kolekce herních objektů.
 - `Player`: řeší ovládání, gravitaci, kolize, sběr mincí a animované vykreslení vodní nebo ohnivé postavy.
 - `Obstacle`: statická pevná překážka nebo speciální platforma podle typu.
 - `MovingPlatform`: pohyblivá překážka, která dědí z `Obstacle`.
@@ -74,15 +74,16 @@ Levely: 5
 Hráči: Water a Fire
 Hazardy: lava, water, acid
 UI stavy: menu, výběr levelu, hraní, pauza, nastavení, dokončení levelu, game over
-Nastavení: TIMER ON/OFF
+Nastavení: TIMER ON/OFF, FULLSCREEN ON/OFF
+Okno: resizable okno se škálováním hry, levely 4-5 používají větší herní plochu
 Build: PyInstaller one-file exe se souborem assets/icon.ico
 ```
 
 ```text
-Level 1: 14 platforem, 9 mincí, 3 hazardy, 2 nepřátelé, 1 kuše
-Level 2: 14 platforem, 9 mincí, 4 hazardy, 2 nepřátelé, 1 kuše
-Level 3: 14 platforem, 8 mincí, 5 hazardů, 3 nepřátelé, 2 kuše
-Level 4: 16 platforem, 8 mincí, 5 hazardů, 3 nepřátelé, 2 kuše
+Level 1: 13 platforem, 6 mincí, 2 hazardy, 0 nepřátel, 0 kuší
+Level 2: 16 platforem, 10 mincí, 2 hazardy, 0 nepřátel, 0 kuší
+Level 3: 16 platforem, 9 mincí, 0 hazardů, 2 nepřátelé, 2 kuše
+Level 4: 17 platforem, 10 mincí, 3 hazardy, 4 nepřátelé, 4 kuše
 Level 5: 18 platforem, 10 mincí, 6 hazardů, 4 nepřátelé, 3 kuše
 ```
 
