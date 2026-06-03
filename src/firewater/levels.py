@@ -260,7 +260,7 @@ class Level:
         self.enemies.append(JumperEnemy(450, self._level_y(480), patrol_left=415, patrol_right=495))
         self.enemies.append(FastEnemy(725, self._level_y(350), patrol_left=705, patrol_right=835))
         self.enemies.append(HeavyEnemy(1125, self._level_y(405), patrol_left=1085, patrol_right=1215))
-        self.enemies.append(FastEnemy(1390, self._level_y(735), patrol_left=1345, patrol_right=1455))
+        self.enemies.append(FastEnemy(1450, self._level_y(735), patrol_left=1440, patrol_right=1470))
         self.crossbows.append(Crossbow(20, self._level_y(260), 1))
         self.crossbows.append(Crossbow(390, self._level_y(95), 1))
         self.crossbows.append(Crossbow(675, self._level_y(245), 1))
